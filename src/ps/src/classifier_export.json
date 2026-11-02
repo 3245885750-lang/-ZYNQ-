@@ -1,0 +1,71 @@
+{
+  "model_dir": "F:\\FPGA\\Vitis_Workspace\\radar_nine_class_20261028\\model",
+  "model_sha256": "34c79724f7eb058a5e295e8c51bdcec92bb21bf2f9d2399530ab46ce8810ca67",
+  "data_sha256": "b6506b8158e0a90d456707fb0304c4944ffde0a7e9ed52f8bc75bf9e328955ce",
+  "frontend": {
+    "sample_rate": 16000,
+    "window_samples": 32000,
+    "hop_samples": 8000,
+    "frame_samples": 400,
+    "frame_hop": 160,
+    "fft_size": 512,
+    "mel_bands": 40,
+    "mfcc_count": 20,
+    "mel_min_hz": 60,
+    "mel_max_hz": 7800,
+    "log_floor_db": -80,
+    "feature_count": 144,
+    "short_audio": "use available frames; zero-pad only if shorter than 25 ms",
+    "version": "logmel_mfcc_stats_v1"
+  },
+  "classes": [
+    {
+      "id": 0,
+      "key": "clap",
+      "name_zh": "拍手"
+    },
+    {
+      "id": 1,
+      "key": "speech",
+      "name_zh": "说话"
+    },
+    {
+      "id": 2,
+      "key": "piano",
+      "name_zh": "钢琴"
+    },
+    {
+      "id": 3,
+      "key": "bird",
+      "name_zh": "鸟叫"
+    },
+    {
+      "id": 4,
+      "key": "dog",
+      "name_zh": "狗叫"
+    },
+    {
+      "id": 5,
+      "key": "horn",
+      "name_zh": "鸣笛"
+    },
+    {
+      "id": 6,
+      "key": "water",
+      "name_zh": "流水"
+    },
+    {
+      "id": 7,
+      "key": "zipper",
+      "name_zh": "拉链"
+    },
+    {
+      "id": 8,
+      "key": "keyboard",
+      "name_zh": "敲键盘"
+    }
+  ],
+  "weights_retrained": true,
+  "scores_calibrated": false,
+  "unknown_rejection_validated": "validation calibrated; live unknown accuracy unmeasured"
+}

@@ -1,0 +1,18 @@
+{
+  "status": "candidate_deployed_for_user_testing",
+  "board_changed": true,
+  "classification_quality_accepted": false,
+  "functional_checks_passed": true,
+  "offline_file_accuracy": 0.6759259259259259,
+  "validation_non_target_false_acceptance": 0.6059089373982992,
+  "limitations": [
+    "old-class regression remains",
+    "unknown state is confidence/margin rejection, not a guarantee for arbitrary unseen sounds",
+    "no new-model live board or remote PC validation"
+  ],
+  "next_required": "add representative labelled board recordings, improve validation performance, then coordinated firmware/PC receiver replacement",
+  "board_deployed": true,
+  "board_runtime_checks_passed": true,
+  "remote_pc_receive_verified": false,
+  "checked_at": "2026-10-28T00:41:04.823455+08:00"
+}

@@ -1,0 +1,64 @@
+{
+  "classes": [
+    {
+      "id": 0,
+      "key": "clap",
+      "name_zh": "拍手"
+    },
+    {
+      "id": 1,
+      "key": "speech",
+      "name_zh": "说话"
+    },
+    {
+      "id": 2,
+      "key": "piano",
+      "name_zh": "钢琴"
+    },
+    {
+      "id": 3,
+      "key": "bird",
+      "name_zh": "鸟叫"
+    },
+    {
+      "id": 4,
+      "key": "dog",
+      "name_zh": "狗叫"
+    },
+    {
+      "id": 5,
+      "key": "horn",
+      "name_zh": "鸣笛"
+    },
+    {
+      "id": 6,
+      "key": "water",
+      "name_zh": "流水"
+    },
+    {
+      "id": 7,
+      "key": "zipper",
+      "name_zh": "拉链"
+    },
+    {
+      "id": 8,
+      "key": "keyboard",
+      "name_zh": "敲键盘"
+    }
+  ],
+  "quiet": {
+    "key": "background",
+    "name_zh": "安静",
+    "power_lte": 64
+  },
+  "unknown": {
+    "key": "uncertain",
+    "name_zh": "不确定",
+    "method": "validation selected confidence and top-two margin"
+  },
+  "source_review": "clip metadata/title screening, not exhaustive human listening",
+  "removed_active_classes": [
+    "cat",
+    "guitar"
+  ]
+}

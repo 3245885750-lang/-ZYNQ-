@@ -1,0 +1,23 @@
+{
+  "board": "xc7z020 / Zynq7020 400-2 Navigator",
+  "transport": "volatile JTAG; not SD or Flash",
+  "version": "radar9_20261028",
+  "protocol": 3,
+  "files": {
+    "payload/radar.bit": "4c57107f56ce0b21d63f981e3c094ecbdb5759fa4dfaaa563ca4d281fd20316d",
+    "payload/radar.elf": "592644fce45429149a546c0ec69a5ce917c81c4c81b5aa259ca248142606143a",
+    "payload/ps7_init.tcl": "2b53704e285e52d2147ab76d7a27966f909adc0de84f31ce76ad278f7927f971"
+  },
+  "mailboxes": {
+    "g_network_boot_nonce": "0x001668a4",
+    "g_stream_header": "0x00273980",
+    "g_classifier_header": "0x00274280",
+    "g_network_header": "0x01a958ec"
+  },
+  "board_ip": "192.168.1.10",
+  "pc_ip": "192.168.1.100",
+  "udp_port": 9000,
+  "new_model_offline_accuracy": 0.6759259259259259,
+  "classification_quality_accepted": false,
+  "source_board_runtime": "This bit/ELF pair was downloaded successfully on the originating PC; the recipient PC has not been tested."
+}

@@ -1,0 +1,83 @@
+{
+  "classes": [
+    {
+      "id": 0,
+      "key": "clap",
+      "name_zh": "拍手"
+    },
+    {
+      "id": 1,
+      "key": "speech",
+      "name_zh": "说话"
+    },
+    {
+      "id": 2,
+      "key": "piano",
+      "name_zh": "钢琴"
+    },
+    {
+      "id": 3,
+      "key": "bird",
+      "name_zh": "鸟叫"
+    },
+    {
+      "id": 4,
+      "key": "dog",
+      "name_zh": "狗叫"
+    },
+    {
+      "id": 5,
+      "key": "horn",
+      "name_zh": "鸣笛"
+    },
+    {
+      "id": 6,
+      "key": "water",
+      "name_zh": "流水"
+    },
+    {
+      "id": 7,
+      "key": "zipper",
+      "name_zh": "拉链"
+    },
+    {
+      "id": 8,
+      "key": "keyboard",
+      "name_zh": "敲键盘"
+    }
+  ],
+  "frontend": {
+    "sample_rate": 16000,
+    "window_samples": 32000,
+    "hop_samples": 8000,
+    "frame_samples": 400,
+    "frame_hop": 160,
+    "fft_size": 512,
+    "mel_bands": 40,
+    "mfcc_count": 20,
+    "mel_min_hz": 60,
+    "mel_max_hz": 7800,
+    "log_floor_db": -80,
+    "feature_count": 144,
+    "short_audio": "use available frames; zero-pad only if shorter than 25 ms",
+    "version": "logmel_mfcc_stats_v1"
+  },
+  "architecture": [
+    144,
+    64,
+    32,
+    9
+  ],
+  "activation": "ReLU, ReLU, softmax",
+  "scores_calibrated": false,
+  "rejection": {
+    "confidence": 0.8,
+    "margin": 0.05,
+    "objective": -0.0244071828933429,
+    "known_correct_acceptance": 0.4437583912085214,
+    "known_wrong_acceptance": 0.1280487230062298,
+    "non_target_acceptance": 0.6059089373982992
+  },
+  "runtime_hop_samples": 1600,
+  "weights_retrained": true
+}

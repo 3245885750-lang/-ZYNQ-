@@ -1,0 +1,57 @@
+{
+  "built": true,
+  "board_tested": true,
+  "board_deployed": true,
+  "actual_udp_tested": false,
+  "elf": "F:\\FPGA\\Vitis_Workspace\\radar_nine_class_20261028\\build\\radar_audio_classifier_ethernet.elf",
+  "elf_sha256": "592644fce45429149a546c0ec69a5ce917c81c4c81b5aa259ca248142606143a",
+  "size": "   text\t   data\t    bss\t    dec\t    hex\tfilename\n 436430\t   3308\t29383120\t29822858\t1c70f8a\tF:\\FPGA\\Vitis_Workspace\\radar_nine_class_20261028\\build\\radar_audio_classifier_ethernet.elf\n",
+  "mailboxes": {
+    "g_network_boot_nonce": "0x001668a4",
+    "g_stream_header": "0x00273980",
+    "g_classifier_header": "0x00274280",
+    "g_network_header": "0x01a958ec"
+  },
+  "model_weights_changed": true,
+  "class_count": 9,
+  "guitar_enabled": false,
+  "cat_enabled": false,
+  "wire_version": 3,
+  "window_samples": 32000,
+  "hop_samples": 1600,
+  "audio_input": "AUD2 beamformed mono PCM",
+  "udp_port": 9000,
+  "sources": {
+    "src\\radar_background_envelope.c": "6e3af573a38b4c6cb8385d36b8362cb5fae486e11cc24f62fc453d98cb01d2b4",
+    "src\\radar_classifier.c": "0f27a440b6c76daaf893854e6cc75709a33836c03ac155eed93ae63182732b97",
+    "src\\radar_pcm_stream.c": "cebb782b4144e510a6d14df172f9bb9caf13b10f1e899fcd57907cc842c401a1",
+    "src\\radar_stream_ring.c": "128ec77af6bb4d7c5dd56db683b57c07966018c718548561f5d5ea71fc32fe1c",
+    "ps\\radar_network.c": "0e042c12c04705c7f565f94dd321b0ff7067998ba717ac18f1d15ace0a57e4bc",
+    "ps\\radar_wire.c": "76bfcfcf5e666595d397b6f9f01fb23535995775ce1ca13559ff941d1595fd00",
+    "ps\\radar_udp_lwip.c": "9680a412ee83b30381ed6b3c911a56557a8f0b9e080cf69481884b1fa2811433",
+    "ps\\radar_board_physpeed.c": "56486b23ef34cb04506364b89b0487978764fec21c005ae984324e92ad101d1a"
+  },
+  "bit_sha256": "4c57107f56ce0b21d63f981e3c094ecbdb5759fa4dfaaa563ca4d281fd20316d",
+  "xsa_sha256": "c2230ce26ee3398951fc1c61832ac6ea56d8782d18093355041e14da3f3ddd74",
+  "model_sha256": "34c79724f7eb058a5e295e8c51bdcec92bb21bf2f9d2399530ab46ce8810ca67",
+  "classes": [
+    "clap",
+    "speech",
+    "piano",
+    "bird",
+    "dog",
+    "horn",
+    "water",
+    "zipper",
+    "keyboard"
+  ],
+  "rejection": {
+    "confidence": 0.8,
+    "margin": 0.05,
+    "objective": -0.0244071828933429,
+    "known_correct_acceptance": 0.4437583912085214,
+    "known_wrong_acceptance": 0.1280487230062298,
+    "non_target_acceptance": 0.6059089373982992
+  },
+  "board_runtime_evidence": "evidence/board_runtime.json"
+}

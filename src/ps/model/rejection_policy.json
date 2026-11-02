@@ -1,0 +1,374 @@
+{
+  "selected": {
+    "confidence": 0.8,
+    "margin": 0.05,
+    "objective": -0.0244071828933429,
+    "known_correct_acceptance": 0.4437583912085214,
+    "known_wrong_acceptance": 0.1280487230062298,
+    "non_target_acceptance": 0.6059089373982992
+  },
+  "grid": [
+    {
+      "confidence": 0.4,
+      "margin": 0.05,
+      "objective": -0.2299215674517333,
+      "known_correct_acceptance": 0.6370731572474291,
+      "known_wrong_acceptance": 0.2772458310794329,
+      "non_target_acceptance": 0.892865892972276
+    },
+    {
+      "confidence": 0.4,
+      "margin": 0.1,
+      "objective": -0.23002086713087033,
+      "known_correct_acceptance": 0.6148479081343081,
+      "known_wrong_acceptance": 0.26741391696850153,
+      "non_target_acceptance": 0.8858312609376441
+    },
+    {
+      "confidence": 0.4,
+      "margin": 0.15,
+      "objective": -0.20211011396683637,
+      "known_correct_acceptance": 0.6113074736535985,
+      "known_wrong_acceptance": 0.25360079896818005,
+      "non_target_acceptance": 0.8749028276687851
+    },
+    {
+      "confidence": 0.4,
+      "margin": 0.2,
+      "objective": -0.17925701621387857,
+      "known_correct_acceptance": 0.599361051292515,
+      "known_wrong_acceptance": 0.23980556824707172,
+      "non_target_acceptance": 0.8543055171778576
+    },
+    {
+      "confidence": 0.4,
+      "margin": 0.25,
+      "objective": -0.13426904502131387,
+      "known_correct_acceptance": 0.5946267096863574,
+      "known_wrong_acceptance": 0.21694554015203035,
+      "non_target_acceptance": 0.8428704982960304
+    },
+    {
+      "confidence": 0.45,
+      "margin": 0.05,
+      "objective": -0.196390749820681,
+      "known_correct_acceptance": 0.620374213486227,
+      "known_wrong_acceptance": 0.2540941998997467,
+      "non_target_acceptance": 0.881647324306899
+    },
+    {
+      "confidence": 0.45,
+      "margin": 0.1,
+      "objective": -0.19049528686827172,
+      "known_correct_acceptance": 0.6126417179962944,
+      "known_wrong_acceptance": 0.2481135540119091,
+      "non_target_acceptance": 0.8768854195449941
+    },
+    {
+      "confidence": 0.45,
+      "margin": 0.15,
+      "objective": -0.17304814555069792,
+      "known_correct_acceptance": 0.6091012835155848,
+      "known_wrong_acceptance": 0.23915990150928576,
+      "non_target_acceptance": 0.8680846458506035
+    },
+    {
+      "confidence": 0.45,
+      "margin": 0.2,
+      "objective": -0.16271032376504002,
+      "known_correct_acceptance": 0.5979444663519027,
+      "known_wrong_acceptance": 0.23122165682507356,
+      "non_target_acceptance": 0.8520327899051303
+    },
+    {
+      "confidence": 0.45,
+      "margin": 0.25,
+      "objective": -0.1207077983496832,
+      "known_correct_acceptance": 0.5942453214331156,
+      "known_wrong_acceptance": 0.2103719499623214,
+      "non_target_acceptance": 0.840597771023303
+    },
+    {
+      "confidence": 0.5,
+      "margin": 0.05,
+      "objective": -0.1663163772314351,
+      "known_correct_acceptance": 0.6055978782512724,
+      "known_wrong_acceptance": 0.2360942167162087,
+      "non_target_acceptance": 0.8563594915722577
+    },
+    {
+      "confidence": 0.5,
+      "margin": 0.1,
+      "objective": -0.1593891660995968,
+      "known_correct_acceptance": 0.6041486028889536,
+      "known_wrong_acceptance": 0.2319059734691301,
+      "non_target_acceptance": 0.8563594915722577
+    },
+    {
+      "confidence": 0.5,
+      "margin": 0.15,
+      "objective": -0.1443066079980555,
+      "known_correct_acceptance": 0.6017641728975818,
+      "known_wrong_acceptance": 0.22431488754646467,
+      "non_target_acceptance": 0.8498314451505942
+    },
+    {
+      "confidence": 0.5,
+      "margin": 0.2,
+      "objective": -0.14395158064536528,
+      "known_correct_acceptance": 0.5922176616920316,
+      "known_wrong_acceptance": 0.22177546578507495,
+      "non_target_acceptance": 0.8360523164778485
+    },
+    {
+      "confidence": 0.5,
+      "margin": 0.25,
+      "objective": -0.11051824188097481,
+      "known_correct_acceptance": 0.5907868234094003,
+      "known_wrong_acceptance": 0.2055490510204293,
+      "non_target_acceptance": 0.8291627521414756
+    },
+    {
+      "confidence": 0.55,
+      "margin": 0.05,
+      "objective": -0.08662639689813678,
+      "known_correct_acceptance": 0.5905701343696445,
+      "known_wrong_acceptance": 0.20413421018579261,
+      "non_target_acceptance": 0.7683660311319886
+    },
+    {
+      "confidence": 0.55,
+      "margin": 0.1,
+      "objective": -0.08662639689813678,
+      "known_correct_acceptance": 0.5905701343696445,
+      "known_wrong_acceptance": 0.20413421018579261,
+      "non_target_acceptance": 0.7683660311319886
+    },
+    {
+      "confidence": 0.55,
+      "margin": 0.15,
+      "objective": -0.08629579472202126,
+      "known_correct_acceptance": 0.5901560556946962,
+      "known_wrong_acceptance": 0.20413421018579261,
+      "non_target_acceptance": 0.7662383715575207
+    },
+    {
+      "confidence": 0.55,
+      "margin": 0.2,
+      "objective": -0.08779518509331397,
+      "known_correct_acceptance": 0.5847942211566601,
+      "known_wrong_acceptance": 0.2029476689534848,
+      "non_target_acceptance": 0.7619830524085844
+    },
+    {
+      "confidence": 0.55,
+      "margin": 0.25,
+      "objective": -0.06661958109790256,
+      "known_correct_acceptance": 0.5836532379464926,
+      "known_wrong_acceptance": 0.19216171577622723,
+      "non_target_acceptance": 0.7598553928341163
+    },
+    {
+      "confidence": 0.6,
+      "margin": 0.05,
+      "objective": -0.07491434232989153,
+      "known_correct_acceptance": 0.5754458047963118,
+      "known_wrong_acceptance": 0.1918330393915994,
+      "non_target_acceptance": 0.7619830524085844
+    },
+    {
+      "confidence": 0.6,
+      "margin": 0.1,
+      "objective": -0.07491434232989153,
+      "known_correct_acceptance": 0.5754458047963118,
+      "known_wrong_acceptance": 0.1918330393915994,
+      "non_target_acceptance": 0.7619830524085844
+    },
+    {
+      "confidence": 0.6,
+      "margin": 0.15,
+      "objective": -0.07491434232989153,
+      "known_correct_acceptance": 0.5754458047963118,
+      "known_wrong_acceptance": 0.1918330393915994,
+      "non_target_acceptance": 0.7619830524085844
+    },
+    {
+      "confidence": 0.6,
+      "margin": 0.2,
+      "objective": -0.07491434232989153,
+      "known_correct_acceptance": 0.5754458047963118,
+      "known_wrong_acceptance": 0.1918330393915994,
+      "non_target_acceptance": 0.7619830524085844
+    },
+    {
+      "confidence": 0.6,
+      "margin": 0.25,
+      "objective": -0.0664401928797938,
+      "known_correct_acceptance": 0.5754458047963118,
+      "known_wrong_acceptance": 0.18796830509208245,
+      "non_target_acceptance": 0.7598553928341163
+    },
+    {
+      "confidence": 0.65,
+      "margin": 0.05,
+      "objective": -0.057581773137570014,
+      "known_correct_acceptance": 0.5496011845847417,
+      "known_wrong_acceptance": 0.176607275121633,
+      "non_target_acceptance": 0.7256240213687022
+    },
+    {
+      "confidence": 0.65,
+      "margin": 0.1,
+      "objective": -0.057581773137570014,
+      "known_correct_acceptance": 0.5496011845847417,
+      "known_wrong_acceptance": 0.176607275121633,
+      "non_target_acceptance": 0.7256240213687022
+    },
+    {
+      "confidence": 0.65,
+      "margin": 0.15,
+      "objective": -0.057581773137570014,
+      "known_correct_acceptance": 0.5496011845847417,
+      "known_wrong_acceptance": 0.176607275121633,
+      "non_target_acceptance": 0.7256240213687022
+    },
+    {
+      "confidence": 0.65,
+      "margin": 0.2,
+      "objective": -0.057581773137570014,
+      "known_correct_acceptance": 0.5496011845847417,
+      "known_wrong_acceptance": 0.176607275121633,
+      "non_target_acceptance": 0.7256240213687022
+    },
+    {
+      "confidence": 0.65,
+      "margin": 0.25,
+      "objective": -0.057581773137570014,
+      "known_correct_acceptance": 0.5496011845847417,
+      "known_wrong_acceptance": 0.176607275121633,
+      "non_target_acceptance": 0.7256240213687022
+    },
+    {
+      "confidence": 0.7,
+      "margin": 0.05,
+      "objective": -0.05727716938180194,
+      "known_correct_acceptance": 0.5128345817712723,
+      "known_wrong_acceptance": 0.1611644345707344,
+      "non_target_acceptance": 0.7079510914617299
+    },
+    {
+      "confidence": 0.7,
+      "margin": 0.1,
+      "objective": -0.05727716938180194,
+      "known_correct_acceptance": 0.5128345817712723,
+      "known_wrong_acceptance": 0.1611644345707344,
+      "non_target_acceptance": 0.7079510914617299
+    },
+    {
+      "confidence": 0.7,
+      "margin": 0.15,
+      "objective": -0.05727716938180194,
+      "known_correct_acceptance": 0.5128345817712723,
+      "known_wrong_acceptance": 0.1611644345707344,
+      "non_target_acceptance": 0.7079510914617299
+    },
+    {
+      "confidence": 0.7,
+      "margin": 0.2,
+      "objective": -0.05727716938180194,
+      "known_correct_acceptance": 0.5128345817712723,
+      "known_wrong_acceptance": 0.1611644345707344,
+      "non_target_acceptance": 0.7079510914617299
+    },
+    {
+      "confidence": 0.7,
+      "margin": 0.25,
+      "objective": -0.05727716938180194,
+      "known_correct_acceptance": 0.5128345817712723,
+      "known_wrong_acceptance": 0.1611644345707344,
+      "non_target_acceptance": 0.7079510914617299
+    },
+    {
+      "confidence": 0.75,
+      "margin": 0.05,
+      "objective": -0.03541375201538799,
+      "known_correct_acceptance": 0.47570591855609223,
+      "known_wrong_acceptance": 0.14329538224469132,
+      "non_target_acceptance": 0.6415111602345646
+    },
+    {
+      "confidence": 0.75,
+      "margin": 0.1,
+      "objective": -0.03541375201538799,
+      "known_correct_acceptance": 0.47570591855609223,
+      "known_wrong_acceptance": 0.14329538224469132,
+      "non_target_acceptance": 0.6415111602345646
+    },
+    {
+      "confidence": 0.75,
+      "margin": 0.15,
+      "objective": -0.03541375201538799,
+      "known_correct_acceptance": 0.47570591855609223,
+      "known_wrong_acceptance": 0.14329538224469132,
+      "non_target_acceptance": 0.6415111602345646
+    },
+    {
+      "confidence": 0.75,
+      "margin": 0.2,
+      "objective": -0.03541375201538799,
+      "known_correct_acceptance": 0.47570591855609223,
+      "known_wrong_acceptance": 0.14329538224469132,
+      "non_target_acceptance": 0.6415111602345646
+    },
+    {
+      "confidence": 0.75,
+      "margin": 0.25,
+      "objective": -0.03541375201538799,
+      "known_correct_acceptance": 0.47570591855609223,
+      "known_wrong_acceptance": 0.14329538224469132,
+      "non_target_acceptance": 0.6415111602345646
+    },
+    {
+      "confidence": 0.8,
+      "margin": 0.05,
+      "objective": -0.0244071828933429,
+      "known_correct_acceptance": 0.4437583912085214,
+      "known_wrong_acceptance": 0.1280487230062298,
+      "non_target_acceptance": 0.6059089373982992
+    },
+    {
+      "confidence": 0.8,
+      "margin": 0.1,
+      "objective": -0.0244071828933429,
+      "known_correct_acceptance": 0.4437583912085214,
+      "known_wrong_acceptance": 0.1280487230062298,
+      "non_target_acceptance": 0.6059089373982992
+    },
+    {
+      "confidence": 0.8,
+      "margin": 0.15,
+      "objective": -0.0244071828933429,
+      "known_correct_acceptance": 0.4437583912085214,
+      "known_wrong_acceptance": 0.1280487230062298,
+      "non_target_acceptance": 0.6059089373982992
+    },
+    {
+      "confidence": 0.8,
+      "margin": 0.2,
+      "objective": -0.0244071828933429,
+      "known_correct_acceptance": 0.4437583912085214,
+      "known_wrong_acceptance": 0.1280487230062298,
+      "non_target_acceptance": 0.6059089373982992
+    },
+    {
+      "confidence": 0.8,
+      "margin": 0.25,
+      "objective": -0.0244071828933429,
+      "known_correct_acceptance": 0.4437583912085214,
+      "known_wrong_acceptance": 0.1280487230062298,
+      "non_target_acceptance": 0.6059089373982992
+    }
+  ],
+  "calibration": "validation windows; equal weight per recording; non-target cat/guitar validation only",
+  "not_universal_open_set_guarantee": true
+}

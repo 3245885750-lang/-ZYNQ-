@@ -1,0 +1,59 @@
+# ---- Vivado / Vitis 工程产物 ----
+build/vivado/
+*.jou
+*.log
+*.str
+*.dcp
+*.rpt
+*.rpx
+*.pb
+*.wdb
+*.wcfg
+*.ltx
+.Xil/
+*.cache/
+*.hw/
+*.sim/
+*.ip_user_files/
+*.runs/
+*.gen/
+*.srcs/sources_1/bd/*/ip/
+*.srcs/sources_1/bd/*/synth_1/
+*.srcs/sources_1/bd/*/hw_handoff/
+vivado*.zip
+xsim.dir/
+webtalk*.jou
+webtalk*.log
+
+# ---- Vivado 临时文件 ----
+*.backup.*
+*.str.gz
+*.zip.tmp
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+env/
+*.egg-info/
+
+# ---- 运行时输出 ----
+received.jsonl
+*.csv.tmp
+*.png.tmp
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# ---- 例外：仓库内需要保留的报告与图 ----
+!sim/results/*.png
+!board/payload/*.bit
+!board/payload/*.elf

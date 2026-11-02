@@ -1,0 +1,199 @@
+--- original/bf_audio_out.v
++++ integration/bf_audio_out.v
+@@ -47,7 +47,8 @@
+     output wire [W-1:0]      m_axis_tdata,
+     output wire              m_axis_tvalid,
+     input  wire              m_axis_tready,
+-    output wire              m_axis_tlast
++    output wire              m_axis_tlast,
++    output reg [31:0]        dropped_samples
+ );
+ 
+     localparam integer NANG = 181;   // tap 表行数（-180..180，2° 步长）
+@@ -267,14 +268,17 @@
+     wire full  = (wptr[AW-1:0] == rptr[AW-1:0]) && (wptr[AW] != rptr[AW]);
+     wire empty = (wptr == rptr);
+     wire beam_valid = (state == S_L2);
+-    wire wr = beam_valid && !full;
+     wire rd = m_axis_tvalid && m_axis_tready;
++    wire wr = beam_valid && (!full || rd);
+ 
+     always @(posedge clk or negedge rst_n) begin
+         if (!rst_n) begin
+             wptr <= 0;
+             rptr <= 0;
++            dropped_samples <= 0;
+         end else begin
++            if (beam_valid && full && !rd && dropped_samples != 32'hffffffff)
++                dropped_samples <= dropped_samples + 1'b1;
+             if (wr) begin
+                 fifo[wptr[AW-1:0]] <= beam_norm;
+                 wptr <= wptr + 1'b1;
+@@ -299,6 +303,6 @@
+                 frame_cnt <= frame_cnt + 1'b1;
+         end
+     end
+-    assign m_axis_tlast = rd && (frame_cnt == FRAME_LEN-1);
++    assign m_axis_tlast = m_axis_tvalid && (frame_cnt == FRAME_LEN-1);
+ 
+ endmodule
+--- original/mvdr_axi_top.v
++++ integration/mvdr_axi_top.v
+@@ -99,6 +99,7 @@
+ 
+     // ---------------- DAS 粗测结果输入（来自 das_scan_top，经 AXI 透传给 PS）----------------
+     input  wire signed [8:0] das_doa,   // DAS 快速粗 DOA（-180..+180，~21ms 更新）
++    input  wire [31:0]        das_seq_in, mvdr_seq_in, audio_dropped_in, audio_count_in,
+     input  wire              das_sig    // DAS 有无信号
+ );
+ 
+@@ -106,13 +107,13 @@
+     // 1) AXI4-Lite 总线适配器
+     // ================================================================
+     wire        wr_en;
+-    wire [3:0]  wr_addr;
++    wire [4:0]  wr_addr;
+     wire [31:0] wr_data;
+     wire [3:0]  wr_strb;
+-    wire [3:0]  rd_addr;
++    wire [4:0]  rd_addr;
+     reg  [31:0] rd_data;
+ 
+-    axi_lite_regs #(.ADDR_BITS(4)) u_regs (
++    axi_lite_regs #(.ADDR_BITS(5)) u_regs (
+         .clk(clk), .rst_n(rst_n),
+         .s_axi_awaddr(s_axi_awaddr), .s_axi_awvalid(s_axi_awvalid), .s_axi_awready(s_axi_awready),
+         .s_axi_wdata(s_axi_wdata), .s_axi_wstrb(s_axi_wstrb), .s_axi_wvalid(s_axi_wvalid), .s_axi_wready(s_axi_wready),
+@@ -135,7 +136,7 @@
+             soft_rst_r <= 1'b0;
+         end else begin
+             soft_rst_r <= 1'b0;                     // 默认自清
+-            if (wr_en && wr_addr == 4'd0) begin
++            if (wr_en && wr_addr == 5'd0 && wr_strb[0]) begin
+                 if (wr_data[0]) start_req  <= 1'b1;
+                 if (wr_data[1]) soft_rst_r <= 1'b1;
+             end
+@@ -268,9 +269,9 @@
+             conv_bin <= 3'd0;
+         end else begin
+             case (phase)
+-            4'd0, 4'd1, 4'd2, 4'd3, 4'd4, 4'd5, 4'd6, 4'd7:
++            4'd0, 4'd1, 4'd2, 4'd3, 4'd4, 4'd5, 4'd6, 5'd7:
+                 if (mi_done) phase <= phase + 4'd1;   // 本 bin 求逆完成，进下一个 bin
+-            4'd8:
++            5'd8:
+                 if (mvdr_done) phase <= 4'd0;         // sweep 融合完成，回初始
+             default: phase <= 4'd0;
+             endcase
+@@ -392,25 +393,42 @@
+     assign av_re  = {av_re7,  av_re6,  av_re5,  av_re4,  av_re3,  av_re2,  av_re1,  av_re0};
+     assign av_im  = {av_im7,  av_im6,  av_im5,  av_im4,  av_im3,  av_im2,  av_im1,  av_im0};
+ 
++    // Commit the PS-visible result on the same edge as mvdr_seq_in advances.
++    // The original doa_reg is still used by beamforming without added latency.
++    reg signed [8:0] ps_doa;
++    reg signed [31:0] ps_smin;
++    reg [5:0] ps_shift;
++    always @(posedge clk or negedge rst_n) begin
++        if (!rst_n) begin
++            ps_doa <= 0; ps_smin <= 0; ps_shift <= 0;
++        end else if (doa_done) begin
++            ps_doa <= doa_reg; ps_smin <= smin_reg; ps_shift <= shift_reg;
++        end
++    end
+     // ================================================================
+     // 5) 读数据 mux
+     // ================================================================
+     always @(*) begin
+         case (rd_addr)
+-        4'd0:    rd_data = 32'd0;                              // 0x00 CTRL：只写，读回 0
+-        4'd1:    rd_data = {30'd0, done_sticky, busy};         // 0x04 STATUS
+-        4'd2:    rd_data = {{23{doa_reg[8]}}, doa_reg};        // 0x08 DOA（有符号度）
+-        4'd3:    rd_data = smin_reg;                           // 0x0C S_MIN
+-        4'd4:    rd_data = {26'd0, shift_reg};                 // 0x10 SHIFT_USED
+-        4'd5:    rd_data = {24'd0, snap_cnt};                  // 0x14 SNAP_CNT
+-        4'd6:    rd_data = {16'd0, BIN0[7:0], BIN1[7:0]};      // 0x18 BIN_LIST
+-        4'd7:    rd_data = 32'h4D56_4452;                      // 0x1C VERSION "MVDR"
+-        4'd8:    rd_data = {{23{das_doa[8]}}, das_doa};         // 0x20 DAS_DOA（有符号度，快速粗测）
+-        4'd9:    rd_data = {31'd0, das_sig};                    // 0x24 DAS_STATUS（bit0=有无信号）
+-        4'd10:   rd_data = {16'd0, BIN2[7:0], BIN3[7:0]};      // 0x28 BIN_LIST2
+-        4'd11:   rd_data = {16'd0, BIN4[7:0], BIN5[7:0]};      // 0x2C BIN_LIST3
+-        4'd12:   rd_data = {16'd0, BIN6[7:0], BIN7[7:0]};      // 0x30 BIN_LIST4
+-        4'd13:   rd_data = pwr_reg;                           // 0x34 PWR（MVDR 总能量 E，门限用）
++        5'd0:    rd_data = 32'd0;                              // 0x00 CTRL：只写，读回 0
++        5'd1:    rd_data = {30'd0, done_sticky, busy};         // 0x04 STATUS
++        5'd2:    rd_data = {{23{ps_doa[8]}}, ps_doa};          // 0x08 committed DOA
++        5'd3:    rd_data = ps_smin;                           // 0x0C committed S_MIN
++        5'd4:    rd_data = {26'd0, ps_shift};                  // 0x10 committed SHIFT
++        5'd5:    rd_data = {24'd0, snap_cnt};                  // 0x14 SNAP_CNT
++        5'd6:    rd_data = {16'd0, BIN0[7:0], BIN1[7:0]};      // 0x18 BIN_LIST
++        5'd7:    rd_data = 32'h4D56_4452;                      // 0x1C VERSION "MVDR"
++        5'd8:    rd_data = {{23{das_doa[8]}}, das_doa};         // 0x20 DAS_DOA（有符号度，快速粗测）
++        5'd9:    rd_data = {31'd0, das_sig};                    // 0x24 DAS_STATUS（bit0=有无信号）
++        5'd10:   rd_data = {16'd0, BIN2[7:0], BIN3[7:0]};      // 0x28 BIN_LIST2
++        5'd11:   rd_data = {16'd0, BIN4[7:0], BIN5[7:0]};      // 0x2C BIN_LIST3
++        5'd12:   rd_data = {16'd0, BIN6[7:0], BIN7[7:0]};      // 0x30 BIN_LIST4
++        5'd13:   rd_data = pwr_reg;                           // 0x34 PWR（MVDR 总能量 E，门限用）
++        5'd14: rd_data = das_seq_in;          // 0x38 DAS committed result count
++        5'd15: rd_data = mvdr_seq_in;         // 0x3C MVDR committed result count
++        5'd16: rd_data = audio_dropped_in;    // 0x40 saturating PCM drop count
++        5'd17: rd_data = 32'h4155_4432;       // 0x44 interface tag "AUD2"
++        5'd18: rd_data = audio_count_in;      // 0x48 PCM transferred to external FIFO
+         default: rd_data = 32'd0;
+         endcase
+     end
+--- original/radar_pl_top_bd.v
++++ integration/radar_pl_top_bd.v
+@@ -106,6 +106,27 @@
+     wire              das_done;  // 每 WIN 样本一拍脉冲，与 doa_das 同拍
+     wire              das_sig;   // 有无信号（max 束功率 > 门限）
+     wire [31:0]       das_pwr;   // DAS max 束功率高 32 位（校准门限用）
++
++    // Integration telemetry; all signals remain in the 50 MHz domain.
++    wire [31:0] audio_dropped;
++    reg [31:0] das_seq, mvdr_seq, audio_count;
++    reg signed [8:0] das_doa_ps;
++    reg das_sig_ps;
++    always @(posedge sys_clk or negedge sys_rst_n) begin
++        if (!sys_rst_n) begin
++            das_seq <= 0; mvdr_seq <= 0; audio_count <= 0;
++            das_doa_ps <= 0; das_sig_ps <= 0;
++        end else begin
++            if (das_done) begin
++                das_seq <= das_seq + 1'b1;
++                das_doa_ps <= doa_das;
++                das_sig_ps <= das_sig;
++            end
++            if (doa_done) mvdr_seq <= mvdr_seq + 1'b1;
++            if (m_axis_audio_tvalid && m_axis_audio_tready)
++                audio_count <= audio_count + 1'b1;
++        end
++    end
+ 
+     mvdr_axi_top #(
+         .AUTO_RUN   (1),
+@@ -138,8 +159,12 @@
+         .doa_done       (doa_done),
+         .pwr_out        (pwr),
+         // DAS 粗测结果透传（供队友 B 经 AXI 读 0x20/0x24）
+-        .das_doa        (doa_das),
+-        .das_sig        (das_sig)
++        .das_doa        (das_doa_ps),
++        .das_sig        (das_sig_ps),
++        .das_seq_in     (das_seq),
++        .mvdr_seq_in    (mvdr_seq),
++        .audio_dropped_in(audio_dropped),
++        .audio_count_in (audio_count)
+     );
+ 
+     // ================= DAS 时域延时求和：宽带快速粗测（~21ms/次）=================
+@@ -189,7 +214,8 @@
+         .m_axis_tdata   (m_axis_audio_tdata),
+         .m_axis_tvalid  (m_axis_audio_tvalid),
+         .m_axis_tready  (m_axis_audio_tready),
+-        .m_axis_tlast   (m_axis_audio_tlast)
++        .m_axis_tlast   (m_axis_audio_tlast),
++        .dropped_samples(audio_dropped)
+     );
+ 
+     // ---- 串口打印 DOA（115200 8N1，输出到 uart_txd）----
