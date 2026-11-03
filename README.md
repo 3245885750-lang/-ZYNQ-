@@ -47,8 +47,6 @@
 | DSP | 102 | 46.4 % |
 | IOB | 15 | 12 % |
 
-综合 0 error，实现 DRC 0 error / 21 warning。完整时序报告请用 `build/` 下的脚本重建后查看。
-
 ---
 
 ## 2. 信号链
@@ -76,16 +74,12 @@
                                                               MLP 分类 ──> UDP 9000
 ```
 
-PYNQ 不适用：本设计是 PL + standalone ARM 裸机 + lwIP 的部署方式。
+本设计是 PL + standalone ARM 裸机 + lwIP 的部署方式。
 
 ---
 
 ## 3. 目录结构
 
-竞赛推荐结构与本仓库的对照：
-
-| 推荐目录 | 本仓库 | 内容 |
-|---|---|---|
 | `README.md` | `README.md` | 项目简介 + 复现步骤 |
 | `src/` | `src/pl/`、`src/ps/`、`src/pc/` | PL RTL 与约束、PS 固件、PC 接收脚本 |
 | `sim/` | `sim/tb/`、`sim/model/`、`sim/results/` | 仿真 testbench、逐位回放模型、结果图 |
