@@ -80,6 +80,7 @@
 
 ## 3. 目录结构
 
+|---|---|
 | `README.md` | `README.md` | 项目简介 + 复现步骤 |
 | `src/` | `src/pl/`、`src/ps/`、`src/pc/` | PL RTL 与约束、PS 固件、PC 接收脚本 |
 | `sim/` | `sim/tb/`、`sim/model/`、`sim/results/` | 仿真 testbench、逐位回放模型、结果图 |
