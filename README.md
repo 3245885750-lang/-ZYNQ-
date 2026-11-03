@@ -80,7 +80,7 @@
 
 ## 3. 目录结构
 
-|---|---|
+```c
 | `README.md` | `README.md` | 项目简介 + 复现步骤 |
 | `src/` | `src/pl/`、`src/ps/`、`src/pc/` | PL RTL 与约束、PS 固件、PC 接收脚本 |
 | `sim/` | `sim/tb/`、`sim/model/`、`sim/results/` | 仿真 testbench、逐位回放模型、结果图 |
@@ -89,6 +89,7 @@
 | `data/` | `data/` | 实测 CSV、测试音频说明、参考结果 |
 | `skill/` | `skill/` | 技能包（见 `skill/README.md`） |
 | `report/` | `report/` | 设计报告、接口文档、排障记录、大模型协作记录 |
+```
 
 `src/pl/` 下有两套 RTL，用途不同：
 
