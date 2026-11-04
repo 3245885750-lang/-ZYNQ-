@@ -1,0 +1,28 @@
+{
+  "protected_files_identical_sha256": {
+    "ps/radar_wire.c": "a7602140e080704e33b3bca5b008dd62708328e2f5a91332561c9da95a622582",
+    "ps/radar_wire.h": "a57a2f42056323e3c85bbebd7c5d41e807d18e98b07acab988b0707f7e39bcea",
+    "ps/radar_udp_lwip.c": "9680a412ee83b30381ed6b3c911a56557a8f0b9e080cf69481884b1fa2811433",
+    "ps/radar_udp_lwip.h": "cb6db2e592de8e65407834fe41d431e9d9995531b51c6ef96c07d45c3db6fc5f",
+    "ps/radar_network_config.h": "80e13142fdb1b37a04cd8ab1803ba2004a032314ba1d136e6d588bbc271ba50f",
+    "ps/radar_board_physpeed.c": "56486b23ef34cb04506364b89b0487978764fec21c005ae984324e92ad101d1a",
+    "src/radar_audio_v2.h": "db0d54f8e8cbff612b2411e7c38b063dd0e3ad4a5a8b9a6ff70a4fe9437985b8",
+    "ps/radar_onset_gate.h": "10699ad2f1d3378f7dcf851dc237e339e79b400dbd84d80b6b7ce1ec22a3972b",
+    "src/radar_class_policy.h": "015ec36aa662e4e99b0553951bf890a098b1200306364512bcd0c924c8b24f17",
+    "src/radar_cnn_data.inc": "3d9851759380c97de80457e7ff9ccca622f4756fb6b614bd2cca706d0d899055",
+    "model/cnn.pt": "dbfc4f36e021136989dca6d8235ed44846f44e7f35a47ced6db2dfcf2b50c8d6"
+  },
+  "base_bd_recreate_identical": true,
+  "network_only_changes": [
+    "Add separate kind=spectrum publication",
+    "Correct parenthesization of BSP timer frequency macro"
+  ],
+  "ps7_init_only_difference": "MIO7 PS_LED0 pullup bit 0x1000 cleared; Ethernet and DDR init identical",
+  "board_ip": "192.168.1.10",
+  "pc_ip": "192.168.1.100",
+  "netmask": "255.255.255.0",
+  "udp_port": 9000,
+  "ethernet": "GE_PS",
+  "board_programmed": false,
+  "remote_pc_contacted": false
+}

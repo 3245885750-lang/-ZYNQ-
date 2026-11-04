@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "synthetic_offline_test": true,
+  "live_board_not_claimed": true,
+  "spectrum_bins": 129,
+  "frequency_range_hz": [
+    0,
+    8000
+  ],
+  "step_hz": 62.5,
+  "units": "dBFS",
+  "silence_and_dc_tests": true,
+  "known_tones_hz": [
+    1000,
+    3000
+  ],
+  "numpy_random_cases": 12,
+  "max_quantization_error_db": 0,
+  "maximum_packet_bytes": 941,
+  "one_datagram_per_spectrum": true,
+  "pc_decoder_and_existing_page_adapter_exercised": true
+}

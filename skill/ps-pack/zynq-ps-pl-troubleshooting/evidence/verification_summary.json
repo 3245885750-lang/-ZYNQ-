@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "date": "2026-11-04",
+  "baseline": "PL004-radar7-live-spectrum-20261102",
+  "checks": {
+    "spectrum_checks.json": true,
+    "clock_pc_checks.json": true,
+    "downloader_mock_checks.json": true,
+    "rebuild_comparison.json": true
+  },
+  "strict_arm_compile_and_link": true,
+  "source_matches_current_and_ide": true,
+  "board_accessed": false,
+  "remote_pc_receipt_verified": false,
+  "hardware_synthesis_and_implementation_rerun": false,
+  "full_training_or_model_dataset_verification_rerun": false,
+  "pending": [
+    "real microphone audio",
+    "steady board load and DMA continuity",
+    "remote PC Ethernet receipt",
+    "current seven-class accuracy",
+    "acoustic onset-to-display latency"
+  ],
+  "package_hash_and_pairing_check": true,
+  "download_verify_only": true
+}

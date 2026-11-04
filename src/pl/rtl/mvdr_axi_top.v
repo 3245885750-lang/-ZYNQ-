@@ -83,6 +83,9 @@
 //   0x30 (12)  BIN_LIST4   R     {16'd0, BIN6[7:0], BIN7[7:0]}
 //   0x34 (13)  PWR         R     MVDR 总能量 E（cov_pwr[47:16]，无信号≈0，门限用）
 //   0x4C (19)  MOTION      R     bit0=声源运动（已切短记忆 SM），bit1=运动检测忙
+//   0x50 (20)  TDOA_DOA    R     拍手瞬态 TDOA 角度（有符号度，已含 +180° 安装偏移）
+//   0x54 (21)  TDOA_STATUS R     bit0=保持窗口内（500ms）, bit1=上次结果低置信,
+//                               bit2=已收到过结果（上电后第一次拍手前为 0）
 //                               （0x38..0x48 留给队友B 的遥测寄存器，见 u_regs 处注释）
 //
 // ============================ PS 用法 ============================
@@ -236,7 +239,11 @@ module mvdr_axi_top #(
 
     // ---------------- DAS 粗测结果输入（来自 das_scan_top，经 AXI 透传给 PS）----------------
     input  wire signed [8:0] das_doa,   // DAS 快速粗 DOA（-180..+180，~21ms 更新）
-    input  wire              das_sig    // DAS 有无信号
+    input  wire              das_sig,   // DAS 有无信号
+
+    // ---------------- 拍手瞬态 TDOA 结果输入（来自 transient_tdoa，经 AXI 透传给 PS）---
+    input  wire signed [8:0] tdoa_doa,  // 瞬态 DOA（-180..+180，已含 +180 安装偏移）
+    input  wire [2:0]        tdoa_status // bit0=保持中, bit1=上次结果低置信, bit2=已有结果
 );
 
     // ================================================================
@@ -249,9 +256,9 @@ module mvdr_axi_top #(
     wire [4:0]  rd_addr;
     reg  [31:0] rd_data;
 
-    // ADDR_BITS=5：给 0x4C MOTION 留地址。队友B 的版本已扩到 5 位并用掉
-    // 0x38/0x3C/0x40/0x44/0x48（DAS/MVDR 计数、PCM 丢帧、tag、PCM 计数），
-    // 0x38 已被占用，所以调试寄存器放 0x4C，两边合并不冲突。
+    // ADDR_BITS=5：给 0x4C MOTION、0x50/0x54 TDOA 留地址。队友B 的版本已扩到 5 位
+    // 并用掉 0x38/0x3C/0x40/0x44/0x48（DAS/MVDR 计数、PCM 丢帧、tag、PCM 计数），
+    // 0x38 已被占用，所以调试寄存器放 0x4C/0x50/0x54，两边合并不冲突。
     axi_lite_regs #(.ADDR_BITS(5)) u_regs (
         .clk(clk), .rst_n(rst_n),
         .s_axi_awaddr(s_axi_awaddr), .s_axi_awvalid(s_axi_awvalid), .s_axi_awready(s_axi_awready),
@@ -303,6 +310,7 @@ module mvdr_axi_top #(
     wire             bx_ready;
     wire [AW-1:0]  cov_rc_re, cov_rc_im;   // cov_accum 随机读口数据（64bit）
     wire [AW-1:0]  cov_pwr;                // cov_accum 迹 EMA（总功率，64bit）
+    wire [AW-1:0]  cov_pwr_fast;           // cov_accum 迹快速 EMA（SF=3，84ms，瞬态检测用）
     wire [8:0]     cq_rc_addr;             // cov_to_q16 → cov_accum 读地址
     wire             cov_rdone;
     wire signed [31:0] cq_re, cq_im;
@@ -394,6 +402,7 @@ module mvdr_axi_top #(
                                 (warm_cnt >= WARM_N);
 
     reg signed [8:0] doa_out_reg;   // 补偿后的输出角度（对外）
+    reg signed [8:0] pred_reg;      // 前导补偿预测角（流水线寄存器：断开 lead-comp→GATE 组合链）
     reg signed [8:0] dh0, dh1, dh2; // 原始角度增量的历史（最近 3 帧）
 
     wire signed [9:0] d_full = {doa_w[8], doa_w} - {doa_reg[8], doa_reg};  // -360..360
@@ -470,12 +479,12 @@ module mvdr_axi_top #(
     reg  [31:0]      pwr_reg;        // 目标 bin 能量（cov_accum 的 EMA 迹，见下方赋值块）
     reg  [31:0]      pwr_peak;        // 本次事件窗口内的能量峰值（运行最大值）
 
-    wire signed [9:0] gate_full = {pred_w[8], pred_w} - {doa_tgt[8], doa_tgt};
+    wire signed [9:0] gate_full = {pred_reg[8], pred_reg} - {doa_tgt[8], doa_tgt};
     wire signed [9:0] gate_d    = (gate_full > 10'sd180)  ? (gate_full - 10'sd360) :
                                   (gate_full < -10'sd180) ? (gate_full + 10'sd360) : gate_full;
     wire        [9:0] gate_ad   = gate_d[9] ? (-gate_d) : gate_d;
 
-    wire signed [9:0] pend_full = {pred_w[8], pred_w} - {gate_pend[8], gate_pend};
+    wire signed [9:0] pend_full = {pred_reg[8], pred_reg} - {gate_pend[8], gate_pend};
     wire signed [9:0] pend_d    = (pend_full > 10'sd180)  ? (pend_full - 10'sd360) :
                                   (pend_full < -10'sd180) ? (pend_full + 10'sd360) : pend_full;
     wire        [9:0] pend_ad   = pend_d[9] ? (-pend_d) : pend_d;
@@ -495,7 +504,7 @@ module mvdr_axi_top #(
 
     // 本次接受相对"上一个被接受的值"跨了多少度（协方差重建判据用它，
     // 不用"到显示角的距离"——大跨步途中那个距离一直很大，会反复触发）
-    wire signed [9:0] tchg_full = {pred_w[8], pred_w} - {doa_tgt[8], doa_tgt};
+    wire signed [9:0] tchg_full = {pred_reg[8], pred_reg} - {doa_tgt[8], doa_tgt};
     wire signed [9:0] tchg      = (tchg_full > 10'sd180)  ? (tchg_full - 10'sd360) :
                                   (tchg_full < -10'sd180) ? (tchg_full + 10'sd360) : tchg_full;
     wire        [9:0] tchg_ad   = tchg[9] ? (-tchg) : tchg;
@@ -505,8 +514,13 @@ module mvdr_axi_top #(
     //   SLEW_EN=0 时 out_next 恒等于目标角，与上一版输出逐位一致。
     //   能量瞬态（拍手）窗口内把上限换成 SLEW_EVT_DEG（现取 6，比普通限速更低）——
     //   任何情况下单帧变化都不会超过上限，所以"圆周不跳"与"拍手不跳"同时成立。
-    wire signed [9:0] tgt_next  = accept_g ? {pred_w[8], pred_w}
-                                             : {doa_tgt[8], doa_tgt};
+    // ⚠ 2026-11-03 时序修复：这里不再走 accept_g ? pred_w : doa_tgt 的组合 bypass。
+    //   原写法让 pred_w（从 doa_reg 出发约 20 级的 lead-comp 组合逻辑）直接流进 SLEW，
+    //   再叠上 GATE 的比较与 SLEW 的环绕加减，doa_reg→doa_out_reg 堆到 54 级、
+    //   板上 WNS −15.05ns / 6456 条违例（时序报告 impl_1）。现在只取已寄存的 doa_tgt
+    //   （上一帧已按 accept_g 选好），SLEW 变成纯寄存器到寄存器路径；代价是显示角
+    //   晚 1 帧（21ms）才开始朝新目标走，不损失精度、不影响圆周/稳态行为。
+    wire signed [9:0] tgt_next  = {doa_tgt[8], doa_tgt};
     wire signed [9:0] slew_full = tgt_next - {doa_out_reg[8], doa_out_reg};
     wire signed [9:0] slew_d    = (slew_full > 10'sd180)  ? (slew_full - 10'sd360) :
                                   (slew_full < -10'sd180) ? (slew_full + 10'sd360) : slew_full;
@@ -590,8 +604,17 @@ module mvdr_axi_top #(
         end
     end
 
+    // ⚠ 2026-11-03 板上实测：稳态宽带声源测向正确，同方位拍手却偏 68° 并在
+    //   100ms 内再漂 47°（202→177→155，V=01 全程判动）。原因是拍手触发 v2 后
+    //   协方差切到 SM=3 的 84ms 短记忆，窗里只剩房间早期反射，估计被混响拖走；
+    //   而且角度一动 v2 又判动，正反馈把自己锁死在短记忆上。
+    //   修法：能量在快速上升（瞬态）期间、以及事件窗口内，不切短记忆，保持 S。
+    //   稳态声源 e_fast/e_slow 恒在 1/16，rise_fast=0，行为与改前逐位一致。
+    //   这里不用绝对门限 2048：安静房间里 e_slow 在起音前可能到不了 2048。
+    wire        rise_fast = (e_slow > 44'd256) &&
+                            ((e_fast << 5) > (e_slow + (e_slow << 2)));
     // v1 ∪ v2；MOTION_EN=0 时整体失效（回到 EMA 固定 S，与旧行为一致）
-    wire moving_all = (MOTION_EN != 0) &&
+    wire moving_all = (MOTION_EN != 0) && (evt_cnt == 5'd0) && !rise_fast &&
                       (det_moving | ((MV2_EN != 0) ? v2_moving : 1'b0));
 
     // 两个判据的原始判决单独引出（串口日志用：板上直接看到"哪个判据认出了运动"）
@@ -613,7 +636,18 @@ module mvdr_axi_top #(
 
     // 能量瞬态（拍手/敲击）判据：快/慢 EMA 比 > 2.5（= e_fast<<5 > 5·e_slow）。
     // 下限 2048 防止静音时 e_slow 太小、比值无意义。
-    wire [43:0] pwr_ext = {12'd0, pwr_reg};
+    //
+    // ⚠ 2026-11-03 板上实测：这个判据原来吃的是 pwr_reg（cov_accum 的 S=7 EMA，
+    //   时间常数 1.34s）。一次拍手只有 0.46s，pwr_reg 在拍手期间只涨到稳态的 30%，
+    //   e_fast 根本压不过 5·e_slow ⇒ evt_now 一次都没触发过（证据：拍手日志里出现
+    //   25°/帧 的大跨步，而 25°/帧 只在 evt_cnt==0 时允许）。
+    //   后果连锁：v2 运动判据在拍手上判动 → 协方差切 SM=3(84ms) → 估计跟着混响走
+    //   → 每拍一次手结果都不一样、拍几次后彻底乱。
+    //   改成吃 cov_accum 的快速迹 pwr_fst（SF=3，84ms）：
+    //     稳态时 pwr_fst 与 pwr_reg 是同一个值（两个 EMA 的定点收敛值相同），
+    //     所以**稳态声源、圆周转动这条路的判决逐位不变**；只有瞬态才看得见。
+    wire [31:0] pwr_fst = cov_pwr_fast[47:16];   // 快速迹，尺度与 pwr_reg 相同
+    wire [43:0] pwr_ext = {12'd0, pwr_fst};
     wire        evt_now = (e_slow > 44'd2048) && ((e_fast << 5) > (e_slow + (e_slow << 2)));
 
     // 快拍有效：只在 S_ACCUM 阶段放行给协方差累积（S_RUN 期间丢弃，避免重启）
@@ -627,6 +661,7 @@ module mvdr_axi_top #(
             snap_cnt   <= 8'd0;
             doa_reg    <= 9'sd0;
             doa_out_reg<= 9'sd0;
+            pred_reg   <= 9'sd0;
             doa_tgt    <= 9'sd0;
             e_fast     <= 44'd0;
             e_slow     <= 44'd0;
@@ -679,10 +714,19 @@ module mvdr_axi_top #(
                     warm_cnt    <= (warm_cnt >= WARM_N) ? warm_cnt          // 冷启动抑制计数（饱和）
                                                         : (warm_cnt + 8'd1);
                     doa_reg     <= doa_w;        // 始终跟随：运动检测器 1.34s 内也保持对准
+                    pred_reg    <= pred_w[8:0];  // 前导补偿结果寄存一拍（时序修复，见 tgt_next 注释）
                     // 能量双 EMA + 拍手事件窗口（每帧都更新，冷启动期间也更新）
                     e_fast <= e_fast - (e_fast >> 2) + pwr_ext;
                     e_slow <= e_slow - (e_slow >> 6) + pwr_ext;
                     if ((CLAP_EN != 0) && evt_now) begin
+                        // ⚠ 2026-11-03 撤回这里的 flush：检测器（e_fast/e_slow 比）要
+                        //   1~2 帧才反应，等它触发时直达声快拍已经被累加进协方差了，
+                        //   此刻 flush 会把"刚攒下的直达声"连同旧混响一起抹掉，
+                        //   下一轮只能从混响尾巴重建 ⇒ 估计必然乱。
+                        //   旧混响的清理改由 cov_accum 的"静音快速遗忘"负责
+                        //   （TH_FAST 抬到 0x100，见 cov_accum_8x8.v）：两次拍手之间的
+                        //   静音段 (E≈75 < 256) 用 SF=3 把旧协方差 0.8s 内衰减到 ~1e-5，
+                        //   下一次拍手天然从近空协方差起算，不需要在事件点动协方差。
                         evt_cnt  <= CLAP_HOLD;                 // 新事件：开窗口，窗口内走 SLEW_EVT_DEG
                         pwr_peak <= pwr_reg;                   //   峰值从触发帧重新计
                     end else if (evt_cnt != 5'd0) begin
@@ -693,18 +737,18 @@ module mvdr_axi_top #(
                     if (warm_ok) begin
                         // 离群剔除：接受（正常帧/候选确认/扣太久）或继续扣住
                         if (accept_g) begin
-                            doa_tgt     <= pred_w[8:0];                      // 已含超前补偿，未开时=doa_w
+                            doa_tgt     <= pred_reg[8:0];                    // 已含超前补偿，未开时=doa_w
                             gate_init   <= 1'b1;
                             gate_cnt    <= 4'd0;
                             gate_pn     <= 4'd0;
-                            gate_pend   <= pred_w[8:0];
+                            gate_pend   <= pred_reg[8:0];
                         end else begin
                             // 饱和在 GATE_MAX-1：事件窗口内 gate_force 被关掉，计数会一直涨。
                             // 若涨到 15 再 +1，4bit 会回绕成 0，把"候选自洽"计数清零；
                             // 而且窗口结束后 (15+1)=0 >= GATE_MAX 恒假，强制放行就永久失效。
                             gate_cnt    <= (gate_cnt >= (GATE_MAX - 1)) ? gate_cnt : (gate_cnt + 4'd1);
                             gate_pn     <= pend_same ? (gate_pn + 4'd1) : 4'd1;
-                            gate_pend   <= pend_same ? gate_pend : pred_w[8:0];
+                            gate_pend   <= pend_same ? gate_pend : pred_reg[8:0];
                         end
                         // 大跨步：接受的目标跳得远就开；本帧能一步走到就算追上了，关掉
                         if (accept_big)
@@ -712,7 +756,10 @@ module mvdr_axi_top #(
                         else if (slew_ad <= slew_lim)
                             big_move <= 1'b0;
                         // 跨过 CLR_DEG 的接受 ⇒ 旧记忆的方向作废，让协方差重建一次
-                        if ((CLR_EN != 0) && accept_g && (tchg_ad > CLR_DEG))
+                        // ⚠ 瞬态期间不重建：拍手的第一帧本来就跨几十度，此时清协方差
+                        //   会把刚攒下的直达声记忆全部抹掉，估计反而落到混响上。
+                        if ((CLR_EN != 0) && (evt_cnt == 5'd0) && !rise_fast &&
+                            accept_g && (tchg_ad > CLR_DEG))
                             flush_req <= 1'b1;
                         doa_out_reg <= out_next;    // 显示端限速（SLEW_EN=0 时恒 = 目标角）
                         dh2         <= dh1;                                  // 增量历史移位
@@ -799,6 +846,7 @@ module mvdr_axi_top #(
         .xready(xready_g),
         .rc_addr(cq_rc_addr), .rc_re(cov_rc_re), .rc_im(cov_rc_im),
         .pwr_out(cov_pwr),
+        .pwr_fast_out(cov_pwr_fast),
         .rdone(cov_rdone)
     );
 
@@ -915,6 +963,8 @@ module mvdr_axi_top #(
         4'd12:   rd_data = {16'd0, BIN6[7:0], BIN7[7:0]};      // 0x30 BIN_LIST4
         4'd13:   rd_data = pwr_reg;                           // 0x34 PWR（MVDR 总能量 E，门限用）
         5'd19:   rd_data = {29'd0, v2_moving, det_busy, det_moving};  // 0x4C MOTION（bit0=v1 运动, bit1=检测忙, bit2=v2 运动）
+        5'd20:   rd_data = {{23{tdoa_doa[8]}}, tdoa_doa}; // 0x50 TDOA_DOA（有符号度，拍手瞬态）
+        5'd21:   rd_data = {29'd0, tdoa_status};          // 0x54 TDOA_STATUS（bit0=保持中, bit1=低置信, bit2=已有结果）
         default: rd_data = 32'd0;
         endcase
     end

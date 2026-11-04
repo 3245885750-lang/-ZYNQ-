@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "synthetic_loopback_only": true,
+  "live_board_tested": false,
+  "original_doa_and_class_schema_preserved": true,
+  "additional_spectrum_same_udp_listener": true,
+  "corrected_bsp_macro_clock_monotonic_cases": 6100,
+  "clock_60_seconds_correct": true,
+  "pc_http_api_received_all_three_kinds": true,
+  "no_contact_with_remote_pc": true
+}

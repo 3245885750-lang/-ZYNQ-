@@ -5,9 +5,12 @@
 #   source create_project.tcl
 #
 # 生成：<repo>/build/vivado/radar_pl_dev/radar_pl_dev.xpr
-# 顶层：mvdr_axi_top（8 元阵列测向链，含 GATE / SLEW / 瞬态窗口）
+# 顶层：radar_pl_bd_verify_top（单板验证顶层；AXI 接死，UART/LED 输出角度）
 #
 # 说明：
+# - TDOA 逻辑在 radar_pl_top_bd.v 内，mvdr_axi_top 只是 IP 核心；
+#   若把顶层设成 mvdr_axi_top，TDOA 支路不会被综合进去。
+# - 给 Block Design 用的顶层是 radar_pl_top_bd，不是这个验证顶层。
 # - 本脚本只建工程、加源码、解析 IP，不自动跑综合/实现；
 #   综合与实现请在 GUI 里手动 Run Synthesis / Run Implementation。
 # - 完整系统（PS + DMA + Block Design）请用 src/pl/integration/radar_system.bd，
@@ -39,6 +42,14 @@ if {[llength $rtl_files] == 0} {
 }
 add_files -norecurse $rtl_files
 
+# 2b. $readmemh 使用的 .mem 必须加入工程，否则综合时找不到
+set mem_files [glob -nocomplain [file join $root src pl rtl *.mem]]
+if {[llength $mem_files]} {
+    add_files -norecurse $mem_files
+} else {
+    puts "WARNING: 未找到 .mem 文件；steer_rom / das_scan_top 可能综合失败"
+}
+
 # 3. FFT IP（xci 随 IP 仓库提供）
 set xci [file join $iprepo radar_pl_audio src fft_512 fft_512.xci]
 if {[file exists $xci]} {
@@ -55,7 +66,8 @@ if {[llength $xdc_files]} {
 }
 
 # 5. 顶层与编译顺序
-set_property top mvdr_axi_top [current_fileset]
+# 单板验证用 radar_pl_bd_verify_top；BD/IP 工程的顶层是 radar_pl_top_bd。
+set_property top radar_pl_bd_verify_top [current_fileset]
 update_compile_order -fileset sources_1
 
 puts "PROJECT_READY: $projdir/radar_pl_dev.xpr"

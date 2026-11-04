@@ -1,0 +1,9 @@
+{
+  "board_ip": "192.168.1.10",
+  "pc_ip": "192.168.1.100",
+  "netmask": "255.255.255.0",
+  "udp_port": 9000,
+  "protocol_version": 3,
+  "max_udp_payload_bytes": 1200,
+  "configured_on_hardware": false
+}

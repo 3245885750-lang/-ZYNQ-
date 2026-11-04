@@ -4,7 +4,7 @@
 src/
 ├── pl/    PL（Verilog、约束、IP 仓库、Block Design）
 ├── ps/    PS（standalone ARM 固件、模型、构建脚本、协议测试）
-└── pc/    PC（UDP 接收、回放、网页接入）
+└── pc/    PC 上位机（UDP/SSE 服务、网页大屏、JTAG 音频桥、声纹）
 ```
 
 ## pl
@@ -40,16 +40,24 @@ python .\src\ps\build.py --gcc-bin "D:\Workspace\vivado2026.1\2026.1\Vitis\gnu\a
 
 ## pc
 
-| 文件 | 作用 |
-|---|---|
-| `receive_results.py` | UDP 9000 接收，写 JSONL |
-| `radar_protocol.py` | 协议 v3 解析（DOA / 分类消息） |
-| `replay_saved.py` | 回放已保存的记录 |
-| `web_receiver.py` | 网页接收端 |
-| `existing_page_adapter.py` | 把 v3 解析接入已有页面 |
+PC 上位机的完整说明见 [`pc/README.md`](pc/README.md)，这里只列入口。
 
-```bash
-cd src/pc
-python receive_results.py --port 9000 --log received.jsonl
-python replay_saved.py --ip 127.0.0.1 --file received.jsonl --interval 0.5
+| 路径 | 作用 |
+|---|---|
+| `pc/pc_rx/pc/web_receiver.py` | UDP 9000 接收 → SSE 8768；声纹线程与录入 API |
+| `pc/pc_rx/pc/radar_protocol.py` | 板端 JSON v3 解码与状态机（doa / classification / spectrum） |
+| `pc/pc_rx/pc/jtag_audio_bridge.py` | JTAG 读 DDR 环形缓冲 → 重采样 16 kHz → `AUD3` 注入 |
+| `pc/acoustic-radar.html` | 单文件网页大屏（方位 / 类别 / 频谱 / 声纹） |
+| `pc/voiceprint/` | CAM++ 声纹模型封装与声纹库 |
+| `pc/launcher.py` | 一键启动（服务 + 音频桥 + 全屏窗口） |
+| `pc/verification/results.md` | PC 端实测数据 |
+
+```powershell
+cd src\pc
+pip install -r requirements.txt
+python pc_rx\pc\web_receiver.py
+python pc_rx\pc\jtag_audio_bridge.py
 ```
+
+浏览器打开 <http://127.0.0.1:8768>。烧录与网络配置见
+[`pc/docs/reproduce.md`](pc/docs/reproduce.md)。

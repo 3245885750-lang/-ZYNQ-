@@ -44,6 +44,9 @@ received.jsonl
 *.csv.tmp
 *.png.tmp
 
+# ---- 回放向量（体积大，按 sim/vec/README.md 本地生成）----
+sim/vec/*.hex
+
 # ---- 编辑器 / 系统 ----
 .vscode/
 .idea/
@@ -57,3 +60,7 @@ desktop.ini
 !sim/results/*.png
 !board/payload/*.bit
 !board/payload/*.elf
+# 综合/实现报告是 3.3.5 的提交物，不要被 *.rpt 忽略
+!build/reports/*.rpt
+# 技能包证据里的日志要保留
+!skill/**/evidence/*.log

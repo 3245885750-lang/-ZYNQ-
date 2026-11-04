@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "kernel_cases": 8,
+  "kernel_max_error": 6.556510925292969e-07,
+  "stream_cases": 147,
+  "stream_max_error": 1.8775463104248047e-06,
+  "class_vocabulary_correct": true,
+  "discontinuity_tests": 7,
+  "checkpoint_sha256": "dbfc4f36e021136989dca6d8235ed44846f44e7f35a47ced6db2dfcf2b50c8d6"
+}

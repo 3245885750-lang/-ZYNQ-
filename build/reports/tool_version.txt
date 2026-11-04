@@ -1,0 +1,9 @@
+vivado=2026.1 (win64) Build 6511674 Tue Jun 16 11:02:23 MDT 2026
+part=xc7z020clg400-2
+top=radar_pl_bd_verify_top
+design_state=Routed
+date=2026-11-03 23:35
+synth_directive=AreaMultThresholdDSP
+note=本目录报告由 Vivado 2026.1 在 radar_pl（radar_pl_bd_verify_top，含 transient_tdoa）上完成
+note=Run Synthesis + Run Implementation 后导出；导出方式见 export_reports.tcl
+note=sys_clk 20 ns (50 MHz)，WNS +0.798 ns

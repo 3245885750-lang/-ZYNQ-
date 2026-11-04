@@ -1,0 +1,31 @@
+#-----------------------------------------------------------
+# xsim v2026.1 (64-bit)
+# SW Build 6511674 on Tue Jun 16 11:02:23 MDT 2026
+# IP Build 6504888 on Tue Jun 09 09:05:25 MDT 2026
+# SharedData Build 6501428 on Mon Jun 08 17:34:18 MDT 2026
+# Start of session at: Mon Nov  2 12:05:47 2026
+# Process ID         : 34644
+# Current directory  : F:/FPGA/Vitis_Workspace/radar_pl004_integration_20261102/hardware/tests
+# Command line       : xsim.exe -log audio_backpressure_verified.log -mode tcl -source {xsim.dir/audio_backpressure_verified/xsim_script.tcl}
+# Log file           : F:/FPGA/Vitis_Workspace/radar_pl004_integration_20261102/hardware/tests/audio_backpressure_verified.log
+# Journal file       : F:/FPGA/Vitis_Workspace/radar_pl004_integration_20261102/hardware/tests\xsim.jou
+# Running On         : zengyu
+# Platform           : Windows 11
+# Operating System   : 26200
+# Processor Detail   : AMD Ryzen 9 7945HX with Radeon Graphics        
+# CPU Frequency      : 2495 MHz
+# CPU Physical cores : 16
+# CPU Logical cores  : 32
+# Host memory        : 16844 MB
+# Swap memory        : 16106 MB
+# Total Virtual      : 32951 MB
+# Available Virtual  : 17383 MB
+#-----------------------------------------------------------
+source xsim.dir/audio_backpressure_verified/xsim_script.tcl
+# xsim {audio_backpressure_verified} -autoloadwcfg -runall
+Time resolution is 1 ps
+run -all
+PASS_AUDIO_BACKPRESSURE generated=340 received=319 dropped=21 packets=39 stalls=798
+$finish called at time : 110800 ns : File "F:/FPGA/Vitis_Workspace/radar_pl004_integration_20261102/hardware/tests/audio_backpressure_tb.sv" Line 66
+exit
+INFO: [Common 17-206] Exiting xsim at Mon Nov  2 12:05:49 2026...

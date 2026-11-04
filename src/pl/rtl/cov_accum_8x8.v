@@ -84,7 +84,20 @@ module cov_accum_8x8 #(
                                   //     >>1..>>5 的峰都指在真方向；>>3 时条件数 3、对比 4dB，
                                   //     >>5 时条件数 9~34、对比 8~12dB（稳态无加载是 1e3/28dB）
                                   //   取 >>4：条件数 5~17（远离奇异），对比 5~10dB，够 GATE 用
-    parameter [31:0] TH_FAST = 32'h40  // 快速能量门限（pwr_fast[47:16] 切片，与 PWR_TH 同尺度）
+    parameter [31:0] TH_FAST = 32'h100 // 快速能量门限（pwr_fast[47:16] 切片，与 PWR_TH 同尺度）
+                                       // ⚠ 2026-11-03：由 0x40 抬到 0x100（256）。
+                                       //   目的：让两次拍手/起音之间的"静音段"重新走
+                                       //   sig_on=0 → 协方差按 SF=3 快速遗忘（84ms），
+                                       //   旧混响在 ~0.8s 内衰减到 ~1e-5，下一次拍手从近空
+                                       //   协方差起算，直达声占主导 ⇒ 拍手测向不再被上一次
+                                       //   的混响拖走。
+                                       //   【不影响稳态/圆周】实测底噪 E≈75，稳态/圆周声源
+                                       //   的 E 在数千以上（>>256），sig_on 恒为 1，走的仍是
+                                       //   S=7/SM=3 那条路，逐位不变。只有 E<256 的静音段
+                                       //   （拍手间隙）行为改变——这正是要修的。
+                                       //   若以后换到更吵的房间（底噪 E 接近 256），把此值
+                                       //   再抬到 0x200 即可；只要保持在"底噪之上、真实声源
+                                       //   之下"即可。
 )(
     input  wire                  clk,
     input  wire                  rst_n,
@@ -100,6 +113,9 @@ module cov_accum_8x8 #(
     output wire [AW-1:0]         rc_re,   // accm_re[rc_addr]（1 拍延迟）
     output wire [AW-1:0]         rc_im,   // accm_im[rc_addr]（1 拍延迟）
     output wire [AW-1:0]         pwr_out, // 8 bin 总功率（对角线迹的 EMA，信号门限用）
+    output wire [AW-1:0]         pwr_fast_out, // 迹的快速 EMA（SF=3，84ms）：瞬态检测用。
+                                         //   稳态与 pwr_out 相同；瞬态时比 pwr_out(S=7,1.34s) 快得多，
+                                         //   上层用它判断"能量是否在快速上升"。
     output reg                   rdone   // K 个快拍累积完成（一拍脉冲）
 );
 
@@ -179,7 +195,8 @@ module cov_accum_8x8 #(
     // 随机读口输出（1 拍延迟的 BRAM 读结果）；功率输出
     assign rc_re   = accm_rd_re;
     assign rc_im   = accm_rd_im;
-    assign pwr_out = pwr_acc;
+    assign pwr_out      = pwr_acc;
+    assign pwr_fast_out = pwr_fast;
 
     // ---- BRAM 读写（写 waddr、读 raddr，简单双端口，读有 1 拍延迟）----
     always @(posedge clk) begin

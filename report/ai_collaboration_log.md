@@ -3,6 +3,13 @@
 > 归档说明：本文是开发期间的工程协作记录，按原样保留。文中出现的 `D:\...`
 > 等绝对路径、以及旧的中文文档名（如「频谱显示.md」「比赛报告架构.md」）
 > 均为当时状态；在仓库内请按 `src/`、`sim/`、`data/`、`report/` 的相对位置查找。
+>
+> **2026-11-04 补记**：本文截止于 2026-10-22。之后的三次关键协作——
+> ① 拍手角度跳变的根因（先取证、再改代码）；② `sd2_acc` 无符号扩展 bug
+> （只有 RTL 逐位回放才能发现）；③ Vivado 综合「卡死」的排查——已整理进
+> [`design_report.md`](design_report.md) 第 8 章。方法沉淀在
+> [`../skill/transient-tdoa-first-arrival/`](../skill/transient-tdoa-first-arrival/)
+> 与 [`../skill/fpga-ai-collaboration/`](../skill/fpga-ai-collaboration/)。
 
 ## 项目一句话
 用一圈 8 个麦克风听声辨位 / 识别，在雷达屏上指给你看。核心是可重构多通道阵列信号处理平台，追求"最精确"的定位精度。
@@ -195,3 +202,31 @@ D = `das_scan_top.v`，**时域延时求和（delay-and-sum）粗测**，和 M�
 - 下一步：**宽带 MVDR 2-bin 已仿真通过（见进度 12），先上板验证**——4.1kHz 纯音 → DOA 应与旧窄带一致（±1°，退化为窄带）；说话/连续噪声（30~50cm、同高度、别怼孔）→ DOA 稳定指向声源；与 DAS `D=` 对照。上板前把 4 个新 .mem 加进 radar_pl。之后 ① **恢复 `radar_pl_top.v` 为 BD-ready 版**（当前是临时自检版，见下条），打包 IP 给 B 搭 BD；② 算法增强：**4c-3 MUSIC**（Jacobi 特征分解 RTL，分辨更近双声源）。（~~宽带 MVDR 扩到 4/8 bin~~ **已完成，见进度 18**）写 tb 时**务必在下降沿驱动输入**（见上面 testbench 竞争条）。
 - **上板验证用临时自检版（2026-10-16）**：`radar_pl_top` 已临时去掉 `fft_axis_*`/`s_axi_*` 端口、AXI tie-off、`wire fft_axis_tready=1'b1`，恢复成能直接 Generate Bitstream 的纯串口自检版。**验证完圆周阵列后要恢复 BD-ready 版**——反操作：加回 16 个端口、tie-off 改回接端口、`wire fft_axis_tready=1'b1` 改回 3 个 assign。
 - **综合/实现「转圈很久」先看日志区分挂死 vs 睡眠（2026-10-14）**：OOC/实现的 log 里 `elapsed` 是墙钟、`cpu` 是实际 CPU 时间；若 `elapsed=12h` 但 `cpu=8min`，是**笔记本睡了**（跑之前把电源睡眠设成「从不」），不是死循环。真正的挂死两者会一起涨。
+
+---
+
+## 2026-11-04 追加：PC 上位机工程包并入
+
+**提示词**：`C:\Users\32458\Documents\fpga赛\提交_工程包_PC上位机 这是PC端程序,请你帮我一并整理`
+
+**先诊断、后改动**（沿用本项目的习惯）：先逐文件读代码与文档，列出与新仓库不一致的
+地方，再动手。发现 5 个“换机器就坏”的点：
+
+- `web_receiver.py` 的声纹目录默认值是作者桌面的绝对路径；
+- `campplus_sv.py` 的声纹库路径多了一层 `demo_data/`，实际文件在模块同目录，
+  原样运行会静默加载空库；
+- `jtag_audio_bridge.py` 把 `xsdb` 写死为 `D:\FPGA\2026.1\Vitis\bin`；
+- `requirements.txt` 缺 `scipy`（重采样）与 `pywebview`（启动器）；
+- `network_config.json` 的 `protocol_version` 还是 2，与 `radar_protocol.py` 的 v3 不一致。
+
+另有 1 个未随包提供的文件：`/simple` 路由引用的 `acoustic-radar-simple.html`，
+访问会抛异常 → 改为文件不存在时返回 404。`feature.py` 依赖未提供的 `configs`
+与 `torchaudio`，部署链路不导入 → 保留原样并标注，不假装它能独立运行。
+
+**自我纠错**：最初想直接覆盖 `src/pc/`；检查 `src/ps/tests/verify_*.py` 后发现
+PS 测试用的是 `src/ps/pc/` 的旧副本，不受影响；仍把旧 `src/pc/` 备份到
+`repo-submit-work\backup_src_pc_20261104\`，再替换。
+
+**验证**：6 个 Python 文件 `py_compile` 通过；`web_receiver` 在 19000/18768 端口
+起服务，`/api/state` 200、`/` 200、`/simple` 404；声纹库读出
+`names=['小明','小美']`、`embeddings=(2,192)`。

@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "checked_files": 1026,
+  "checks": [
+    "all manifest checksums",
+    "XSA embedded bit and PS init match payload",
+    "release RTL/firmware source identity",
+    "release ELF and diagnostic addresses",
+    "Python syntax"
+  ],
+  "board_accessed": false,
+  "remote_pc_receipt_verified": false
+}

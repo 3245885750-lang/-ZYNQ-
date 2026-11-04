@@ -37,7 +37,22 @@ PS-LED0 应亮，采音/模型计数应增长。
 
 ## 与源码的对应关系
 
-本 bit 由交付版本的 `radar_pl_audio` IP 与 `radar_system.bd` 生成，
-对应 `src/pl/ip_repo/radar_pl_audio/`（基线 RTL），**不包含**
-`src/pl/rtl/` 里输出级的 GATE / SLEW / 瞬态窗口优化。差异见
-`src/pl/constraints/source_changes.diff` 与根目录 README 第 3 节。
+本目录的 `radar.bit` / `radar.elf` 是 **2026-10-28 的基线版本**，
+由 `src/pl/ip_repo/radar_pl_audio/`（基线 RTL）+ `radar_system.bd` 生成，
+**不包含** `src/pl/rtl/` 里的以下开发内容：
+
+| 未部署内容 | 位置 | 说明 |
+|---|---|---|
+| 输出级 GATE / SLEW / 瞬态窗口优化 | `src/pl/rtl/mvdr_axi_top.v` | 差异见 `src/pl/constraints/source_changes.diff` |
+| 瞬态拍手 TDOA 支路 | `src/pl/rtl/radar_pl_top_bd.v` 内 `transient_tdoa` | AXI `0x50/0x54`，见 `report/handoff_tdoa_to_ps.md` |
+
+因此：
+
+- 按本目录操作，板上跑的是**基线功能**，拍手仍走 MVDR，表现见
+  `data/clap_log_20261101.csv`；
+- 要上板验证 TDOA，必须先按 `build/update_ip_and_bd.md` 重新打包
+  `radar_pl_audio` IP、更新 BD、重新生成 bit，并按该文档给 PS 加
+  `0x50/0x54` 读取与显示切换；
+- 重新生成 bit/ELF 后，`manifest.json` 里的哈希和版本号必须一起更新，
+  否则 `download.ps1 -VerifyOnly` 会拒绝；旧的 `data/*.csv` 也不能再和
+  新 bit 混在一起比较。

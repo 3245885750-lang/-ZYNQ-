@@ -1,0 +1,8 @@
+# PC dashboard dependencies (Python 3.9+ 64-bit)
+numpy          # audio buffers, spectrum, voiceprint embeddings
+scipy          # jtag_audio_bridge: 48.828 kHz -> 16 kHz polyphase resampling
+torch          # CAM++ inference backend (CPU build is enough; large download)
+modelscope     # fetch/load iic/speech_campplus_sv_zh-cn_16k-common
+soundfile      # audio file I/O helper used by feature.py
+pywebview      # launcher.py native fullscreen window (WebView2 on Windows)
+pyinstaller    # optional: rebuild the one-file launcher exe

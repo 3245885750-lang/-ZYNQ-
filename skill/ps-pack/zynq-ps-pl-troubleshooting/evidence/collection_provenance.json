@@ -1,0 +1,18 @@
+{
+  "collected_date": "2026-11-04",
+  "source_root": "F:\\FPGA\\Vitis_Workspace\\radar_pl004_integration_20261102",
+  "release_source_comparison_passed": true,
+  "ide_audio_network_sources_match": true,
+  "source_release": "PL004-radar7-live-spectrum-20261102",
+  "source_changes": [
+    "firmware/build.py: remove machine-specific drive fallback; explicit --gcc-bin retained",
+    "portable regression paths and compiler arguments"
+  ],
+  "model_identity": [
+    1347170356,
+    539365634,
+    3123723717,
+    4099363024
+  ],
+  "board_accessed": false
+}

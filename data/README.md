@@ -35,7 +35,8 @@
 | `circle_v3/v4/v5.csv` | 1469–7179 | 声源绕阵列旋转 | 轨迹平滑度、限速与记忆行为 |
 | `circle_fast.csv` | 1991 | 快速旋转 | 大角度转动与 `big_move` 分支 |
 | `circle_slow2.csv` | 6666 | 慢速旋转 | 稳态跟踪 |
-| `clap_log_20261101.csv` | 40 | 固定方位拍手 | 瞬态窗口与峰值相对门限的来源数据 |
+| `clap_log_20261101.csv` | 40 | 固定方位拍手（基线） | 瞬态窗口与峰值相对门限的来源数据 |
+| `tdoa_board_summary.md` | — | TDOA 上板实测汇总模板 | 3.3.5.1 的实测比对，待上板填写 |
 
 ### clap_log 说明了什么
 
@@ -65,4 +66,6 @@ python sim/model/sim_clap_smooth.py data/clap_log_20261101.csv
 
 - 数据是**角度序列**，不含原始音频，不能用来复算 MVDR 谱；
 - `pwr` 是定点能量，不同录制之间不可直接比较绝对值；
-- 这些数据采集于基线 RTL；`src/pl/rtl/` 的输出级优化尚未在板上复测。
+- 上表中的 CSV 采集于 2026-10-28 的基线 bit；`src/pl/rtl/` 的 TDOA 开发版
+  目前只有 RTL 逐位回放结果（`sim/results/tdoa_replay_summary.md`），
+  上板数据按 `data/tdoa_board_summary.md` 采集后单独记录，不要混在同一张表里。

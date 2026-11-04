@@ -1,0 +1,142 @@
+{
+  "date": "2026-11-04",
+  "files": [
+    {
+      "file": "reset_observation_20261022.md",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\docs\\实板采音进展_20261022.md",
+      "sha256": "cb48fe0027dbe3524c95a506ea7aeb2d9565b561b4e90d673c438c27685b73cf",
+      "mode": "verbatim"
+    },
+    {
+      "file": "legacy_supplement_note.md",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\handoff_work\\PS_PC_complete_UDP9000_20261025\\补齐说明.md",
+      "sha256": "adb87fac6ae1413d86fe93caf0895c2f053a887af9ad4b373d24e1259fd7d2f7",
+      "mode": "verbatim"
+    },
+    {
+      "file": "collection_provenance.json",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\evidence\\collection_provenance.json",
+      "sha256": "31c3108dcbe99eb92d1c058c728ca18d3f24a08ab8b9f73a4836b477293d5d00",
+      "mode": "verbatim"
+    },
+    {
+      "file": "pc_interface_original.md",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\PC接入说明.md",
+      "sha256": "15bc0ba6177d0b18cc91d2f4f4c34074b8d40b27d256410d7cae8b6d18aa2651",
+      "mode": "verbatim"
+    },
+    {
+      "file": "performance_original.md",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\docs\\资源与性能.md",
+      "sha256": "529938a275fed4fdda9c6a8a0d647136df9871ffd83aa78aa3599d7ce88cc64f",
+      "mode": "verbatim"
+    },
+    {
+      "file": "package_checks.json",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\evidence\\current\\package_checks.json",
+      "sha256": "782b659255f5b050339b4430ad2202e89c20b5b4601c3cea7592c388ffd6215b",
+      "mode": "verbatim"
+    },
+    {
+      "file": "rebuild_comparison.json",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\evidence\\current\\rebuild_comparison.json",
+      "sha256": "e936dcb7cf7b7c73ba107ef12b2941e5765f73f4d1af5978a3833bb20553b194",
+      "mode": "verbatim"
+    },
+    {
+      "file": "clock_pc_checks.json",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\evidence\\current\\clock_pc_checks.json",
+      "sha256": "02eebd034d0b92b2142a1583df3795ef3e52c58d13985ac8533157718d8ef48c",
+      "mode": "verbatim"
+    },
+    {
+      "file": "spectrum_checks.json",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\evidence\\current\\spectrum_checks.json",
+      "sha256": "cc8fb0b24fb34f3f56c76bc5185e3e74de34e84923e91b7e13fadc15dc4d91f3",
+      "mode": "verbatim"
+    },
+    {
+      "file": "verification_summary.json",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\evidence\\current\\verification_summary.json",
+      "sha256": "b25abd302f20189786a1166308170b2e0323faa22275d24a4c0ebfdd69caf06c",
+      "mode": "verbatim"
+    },
+    {
+      "file": "integration_scope.json",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\evidence\\historical\\integration_scope.json",
+      "sha256": "54c10b0fd553e20693e2e7b1053e5787d3ff6020ac851863bab4f636e58f7679",
+      "mode": "verbatim"
+    },
+    {
+      "file": "native_verification.json",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\evidence\\historical\\native_verification.json",
+      "sha256": "f720592ef670996ed5bc224eee7c12907a5d4ece3849ed11bce6ab4c438acdd5",
+      "mode": "verbatim"
+    },
+    {
+      "file": "pl_compatibility_changes.diff",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\evidence\\historical\\pl_compatibility_changes.diff",
+      "sha256": "8bfd878b4f45aa6685e44754b9445e43da00b7708cc7e687aec514d50636c8c0",
+      "mode": "verbatim"
+    },
+    {
+      "file": "audio_backpressure_verified.log",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\evidence\\historical\\audio_backpressure_verified.log",
+      "sha256": "ae740594d67bf81b114e1db6bb1b3729f169479a0239e47ab98bf5ca68bc7af0",
+      "mode": "verbatim"
+    },
+    {
+      "file": "source_excerpts.md",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\firmware\\deps\\audio_bsp\\include\\xtimer_config.h",
+      "sha256": "27c0700fba487080f8872e198d4c5814846568c990859f29ecd091d1b526a093",
+      "mode": "excerpt",
+      "line_ranges": [
+        [
+          10,
+          18
+        ]
+      ]
+    },
+    {
+      "file": "source_excerpts.md",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\firmware\\ps\\radar_network.c",
+      "sha256": "b13abeecdf14ddfb4058ec17872309d256a02205a432a82779bbd9cb2ba35f02",
+      "mode": "excerpt",
+      "line_ranges": [
+        [
+          29,
+          43
+        ]
+      ]
+    },
+    {
+      "file": "source_excerpts.md",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\firmware\\src\\radar_class_policy.h",
+      "sha256": "015ec36aa662e4e99b0553951bf890a098b1200306364512bcd0c924c8b24f17",
+      "mode": "excerpt",
+      "line_ranges": [
+        [
+          1,
+          30
+        ]
+      ]
+    },
+    {
+      "file": "source_excerpts.md",
+      "source": "C:\\Users\\zengy\\Documents\\ChatGPT\\FPGA\\deliverables\\PS_Project_20261104\\hardware\\radar_audio_recreate.tcl",
+      "sha256": "bd72fd14386cdabdfcc7c76a07e6bd353b87a650cc9067f8750bca358da9fa2a",
+      "mode": "excerpt",
+      "line_ranges": [
+        [
+          490,
+          505
+        ],
+        [
+          550,
+          562
+        ]
+      ]
+    }
+  ],
+  "board_accessed": false
+}

@@ -1,0 +1,1213 @@
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>声学雷达 · Acoustic Radar System</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg-0: #050a0e;
+    --bg-1: #0a141c;
+    --bg-2: #0f1e2a;
+    --panel: rgba(15, 30, 42, 0.85);
+    --border: rgba(0, 229, 255, 0.25);
+    --border-strong: rgba(0, 229, 255, 0.55);
+    --accent: #00e5ff;
+    --accent-dim: #00b8cc;
+    --green: #00ff88;
+    --warn: #ffaa00;
+    --danger: #ff4466;
+    --text: #cfe9f2;
+    --text-dim: #6a8a99;
+    --glow: 0 0 12px rgba(0, 229, 255, 0.45);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    background:
+      radial-gradient(ellipse at 20% 10%, #0b1f2e 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 90%, #0a1620 0%, transparent 55%),
+      var(--bg-0);
+    color: var(--text);
+    overflow: hidden;
+    user-select: none;
+  }
+  /* ===== Top bar ===== */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 22px;
+    background: linear-gradient(180deg, rgba(0,40,60,.7), rgba(0,20,30,.3));
+    border-bottom: 1px solid var(--border);
+    height: 58px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .logo {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+    animation: pulse 2s infinite;
+  }
+  .brand h1 { font-size: 18px; letter-spacing: 2px; color: var(--accent); text-shadow: var(--glow); }
+  .brand h1 small { color: var(--text-dim); font-weight: 400; font-size: 12px; margin-left: 8px; letter-spacing: 1px; }
+  .status { display: flex; gap: 18px; align-items: center; font-size: 13px; }
+  .status-item { display: flex; align-items: center; gap: 7px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: blink 1.4s infinite; }
+  .dot.loss { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+  @keyframes pulse { 0%,100%{transform:scale(1);opacity:.8;} 50%{transform:scale(1.15);opacity:1;} }
+  @keyframes blink { 50% { opacity: 0.35; } }
+
+  /* ===== Layout ===== */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr;
+    grid-template-rows: 1.5fr 1.6fr 1.3fr;   /* 类别检测 1.5；采集信号可视化(频谱) 1.6；声纹 1.3 */
+    gap: 14px;
+    padding: 14px;
+    height: calc(100vh - 58px);
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    /* backdrop-filter 已移除：面板内有 60fps canvas 时，毛玻璃每帧重算会造成明显掉帧 */
+    display: flex;
+    flex-direction: column;
+  }
+  .panel::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(135deg, rgba(0,229,255,.06), transparent 40%);
+  }
+  .panel-title {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px; letter-spacing: 1px; color: var(--accent);
+    background: rgba(0, 60, 80, 0.25);
+    flex-shrink: 0;
+  }
+  .panel-title .tag { font-size: 11px; color: var(--text-dim); }
+  .panel-body { position: relative; flex: 1; padding: 10px; min-height: 0; }
+
+  /* Radar spans left column all rows */
+  .radar-panel { grid-row: 1 / 4; }
+
+  /* ===== Radar ===== */
+  .radar-wrap { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+  #radar { display: block; width: 100%; height: 100%; }
+
+  /* ===== Signal viz ===== */
+  .signal-panel .panel-body { display: flex; flex-direction: column; padding: 8px; }
+  #spectrum { width: 100%; flex: 1; min-height: 0; display: block; }
+  .hide { display: none !important; }
+
+  /* ===== Classification ===== */
+  .cls-list { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; height: 100%; padding-right: 4px; }
+  .cls-list.collapsed .cls-item:not(.active) { display: none; }   /* 默认只显示当前类别；点“类别库”展开全部 */
+  /* 折叠态：左半图标、右半文字，充满面板；命中事件类时右侧蓝点常亮 */
+  .cls-list.collapsed .cls-item.active {
+    flex: 1; align-items: center; gap: 0; padding: 10px 26px;
+  }
+  .cls-list.collapsed .cls-item.active .icon {
+    flex: 0 0 50%; height: 100%; width: auto; font-size: clamp(52px, 13vh, 110px);
+    border: none; background: transparent;
+  }
+  .cls-list.collapsed .cls-item.active .meta { flex: 1; display: flex; align-items: center; }
+  .cls-list.collapsed .cls-item.active .name { font-size: clamp(30px, 6vh, 46px); font-weight: 700; }
+  .cls-list.collapsed .cls-item.active .name span { font-size: 18px !important; }
+  .cls-list.collapsed .cls-item.active .pct { display: none; }   /* 折叠态不显示数字 */
+  .cls-item.hit { border-color: var(--accent) !important; background: rgba(0, 229, 255, 0.10) !important; animation: none !important; }
+  .cls-item.hit .name { color: var(--accent); }
+  .cls-item.hit::after {   /* 命中七类：右侧蓝色小圆点常亮指示 */
+    content: ""; width: 10px; height: 10px; border-radius: 50%; margin-left: auto; flex-shrink: 0;
+    background: var(--accent); box-shadow: 0 0 8px var(--accent);
+  }
+  .cls-lib-btn { background: rgba(0,255,255,0.08); border: 1px solid rgba(0,255,255,0.35); color: var(--accent); font-size: 11px; padding: 1px 8px; border-radius: 3px; cursor: pointer; }
+  .cls-lib-btn:hover { background: rgba(0,255,255,0.18); }
+  .cls-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px;
+    background: rgba(0, 40, 60, 0.3);
+    transition: order .18s ease, border-color .2s, background .2s, box-shadow .2s;
+  }
+  .cls-item.active {
+    border-color: var(--accent); background: rgba(0, 229, 255, 0.08); box-shadow: var(--glow);
+    animation: clsPop .35s ease-out;
+  }
+  @keyframes clsPop { 0%{transform:scale(.96);border-color:var(--green);} 100%{transform:scale(1);} }
+  .cls-item .icon {
+    width: 46px; height: 46px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 24px; background: rgba(0,229,255,.1); border: 1px solid var(--border); flex-shrink: 0;
+  }
+  .cls-item .meta { flex: 1; min-width: 0; }
+  .cls-item .name { font-size: 16px; color: var(--text); }
+  .cls-item .en { font-size: 11px; color: var(--text-dim); }
+  .cls-item .bar { height: 7px; background: rgba(255,255,255,.08); border-radius: 3px; margin-top: 7px; overflow: hidden; }
+  .cls-item .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-dim), var(--accent)); border-radius: 3px; transition: width .25s; }
+  .cls-item.active .bar > i { background: linear-gradient(90deg, var(--green), var(--accent)); }
+  .cls-item .pct { font-size: 17px; color: var(--accent); width: 62px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  /* ===== Voiceprint ===== */
+  .vp-head { display: flex; gap: 10px; padding: 0; }
+  .vp-avatar {
+    width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+    background: radial-gradient(circle, rgba(0,229,255,.2), transparent 70%);
+    border: 2px solid var(--border-strong);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: var(--accent);
+    box-shadow: var(--glow);
+  }
+  .vp-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .vp-name { font-size: 16px; color: var(--accent); font-weight: 600; }
+  .vp-id { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+  .vp-conf { font-size: 11px; color: var(--green); margin-top: 2px; }
+  .vp-conf .big { font-size: 18px; color: var(--green); font-weight: 600; }
+  .vp-list { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; max-height: 56px; overflow-y: auto; }
+  .vp-cand {
+    display: flex; align-items: center; gap: 8px;
+    padding: 3px 8px; border: 1px solid var(--border); border-radius: 4px;
+    background: rgba(0,40,60,.25); font-size: 11px;
+  }
+  .vp-cand.top { border-color: var(--green); background: rgba(0,255,136,.08); }
+  .vp-cand .name { flex: 1; }
+  .vp-cand .score { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .vp-foot { display: flex; gap: 8px; margin-top: 6px; }
+  .vp-foot button {
+    flex: 1; padding: 5px; font-size: 11px; cursor: pointer;
+    background: transparent; color: var(--accent); border: 1px solid var(--border-strong);
+    border-radius: 5px; transition: .2s;
+  }
+  .vp-foot button:hover { background: rgba(0,229,255,.1); }
+
+  /* ===== Scrollbar ===== */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+  /* corner decorations */
+  .corner { position: absolute; width: 14px; height: 14px; border-color: var(--accent); pointer-events: none; }
+  .corner.tl { top: 4px; left: 4px; border-top: 1.5px solid; border-left: 1.5px solid; }
+  .corner.tr { top: 4px; right: 4px; border-top: 1.5px solid; border-right: 1.5px solid; }
+  .corner.bl { bottom: 4px; left: 4px; border-bottom: 1.5px solid; border-left: 1.5px solid; }
+  .corner.br { bottom: 4px; right: 4px; border-bottom: 1.5px solid; border-right: 1.5px solid; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="logo"></div>
+    <h1>声学雷达 <small>ACOUSTIC RADAR · 8-MIC CIRCULAR ARRAY</small></h1>
+  </div>
+  <div class="status">
+    <div class="status-item"><span class="dot"></span> ZYNQ 在线</div>
+    <div class="status-item"><span class="dot"></span> 采样率 48kHz</div>
+    <div class="status-item"><span class="dot"></span> FPGA 波束成形</div>
+    <div class="status-item" id="connStatus"><span class="dot loss"></span><span class="txt">PS 未连接</span></div>
+    <div class="status-item" id="latency">延迟 <span style="color:var(--accent)">--</span> ms</div>
+    <div class="status-item" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<div class="main">
+  <!-- RADAR -->
+  <div class="panel radar-panel">
+    <span class="corner tl"></span><span class="corner tr"></span>
+    <span class="corner bl"></span><span class="corner br"></span>
+    <div class="panel-title">
+      <span>◎ 360° 声源定位雷达 / DOA</span>
+      <span class="tag" id="radarTag">MVDR · 8 Mic UCA</span>
+    </div>
+    <div class="panel-body radar-wrap">
+      <canvas id="radar"></canvas>
+    </div>
+  </div>
+
+  <!-- SIGNAL -->
+  <div class="panel signal-panel">
+    <span class="corner tl"></span><span class="corner tr"></span>
+    <span class="corner bl"></span><span class="corner br"></span>
+    <div class="panel-title">
+      <span>∿ 采集信号可视化</span>
+      <span class="tag" id="sigTag">实时频谱 · 0-8kHz dBFS</span>
+    </div>
+    <div class="panel-body">
+      <canvas id="spectrum"></canvas>
+    </div>
+  </div>
+
+  <!-- CLASSIFICATION -->
+  <div class="panel">
+    <span class="corner tl"></span><span class="corner tr"></span>
+    <span class="corner bl"></span><span class="corner br"></span>
+    <div class="panel-title">
+      <span>♪ 声音类别检测</span>
+      <span style="display:flex;gap:6px;align-items:center;">
+        <button id="clsLibBtn" class="cls-lib-btn">📚 类别库</button>
+        <span class="tag">MLP @ ARM PS</span>
+      </span>
+    </div>
+    <div class="panel-body">
+      <div id="clsState" style="font-size:11px;color:var(--text-dim);margin-bottom:6px;display:flex;justify-content:space-between;">
+        <span id="clsStateText">等待数据…</span><span id="clsStateMeta"></span>
+      </div>
+      <div class="cls-list collapsed" id="clsList"></div>
+    </div>
+  </div>
+
+  <!-- Voiceprint panel (right column, third row) -->
+  <div class="panel" id="voiceprintPanel">
+    <span class="corner tl"></span><span class="corner tr"></span>
+    <span class="corner bl"></span><span class="corner br"></span>
+    <div class="panel-title">
+      <span>☻ 声纹人物识别</span>
+      <span class="tag">Speaker Verification</span>
+    </div>
+    <div class="panel-body" style="padding: 6px 12px;">
+      <div class="vp-head">
+        <div class="vp-avatar" id="vpAvatar">👤</div>
+        <div class="vp-info">
+          <div class="vp-name" id="vpName">未识别</div>
+          <div class="vp-id" id="vpId">ID: --</div>
+          <div class="vp-conf" style="display:none">置信度 <span class="big" id="vpConf">0.0</span>%</div>
+        </div>
+      </div>
+      <div class="vp-list" id="vpList"></div>
+      <div class="vp-foot">
+        <button id="vpEnroll">➕ 录入声纹</button>
+        <button id="vpClear">清除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   声学雷达网页端
+   - 数据唯一来源：本机 web_receiver.py (UDP 9000 接收板卡数据)
+     的 /api/state HTTP 轮询（RADAR UDP JSON v2：doa 方位[仅 MVDR]
+     / classification 分类）
+   - 无内置模拟数据；接收服务未连接时页面静止等待
+   ============================================================ */
+
+// ---------- Sound categories ----------
+// PL004 七类（class_set=radar7_20261101，协议仍 9 槽，玻璃/发动机两槽停用不显示）：
+//   0 clap 1 speech 2 siren 3 bell 4 dog 5 horn 6 water
+//   quiet(安静) 由 state 表示，不占分数槽
+const CATEGORIES = [
+  { zh: "拍手",     en: "Clap",   icon: "👏",  label: "clap",   psIdx: 0 },
+  { zh: "说话",     en: "Speech", icon: "🗣️", label: "speech", psIdx: 1 },
+  { zh: "警笛",     en: "Siren",  icon: "🚨",  label: "siren",  psIdx: 2 },
+  { zh: "钟声",     en: "Bell",   icon: "🔔",  label: "bell",   psIdx: 3 },
+  { zh: "狗叫",     en: "Dog",    icon: "🐶",  label: "dog",    psIdx: 4 },
+  { zh: "汽车鸣笛", en: "Horn",   icon: "📢",  label: "horn",   psIdx: 5 },
+  { zh: "流水",     en: "Water",  icon: "💧",  label: "water",  psIdx: 6 },
+  { zh: "安静",     en: "Quiet",  icon: "🤫",  label: "quiet",  psIdx: -1, state: true },
+];
+const CLS_LABEL2IDX = {}; // ps label → CATEGORIES 索引
+CATEGORIES.forEach((c, i) => { CLS_LABEL2IDX[c.label] = i; });
+
+// 取某类别得分（0..1）；安静/不确定无分数槽，返回 null
+function scoreOf(scores, cat) {
+  if (!Array.isArray(scores) || cat.psIdx < 0) return null;
+  return (scores[cat.psIdx] || 0) / 1e6;
+}
+
+// 分类状态 (v2 state) → 显示
+const CLS_STATE_TEXT = {
+  pending:    "等待音频窗口",
+  event:      "检测到事件",
+  background: "安静",
+  uncertain:  "安静",
+  error:      "采集/识别错误",
+};
+
+// 旧版 v1 演示格式的 sound_type 代码 → ps label（向后兼容，映射到 PL004 七类）
+const SOUND_TYPE_MAP = {
+  CLAP: "clap", SPEECH: "speech", TALK: "speech", VOICE: "speech",
+  HORN: "horn", SIREN: "siren", ALARM: "siren", BELL: "bell",
+  DOG: "dog", WATER: "water",
+};
+
+// ---------- 声纹人物识别（真实数据来自 PC 端 MFCC+CNN 声纹库，无模拟数据）----------
+
+// ---------- DOM ----------
+const radarCanvas = document.getElementById("radar");
+const rctx = radarCanvas.getContext("2d");
+const specCanvas = document.getElementById("spectrum");
+const sctx = specCanvas.getContext("2d");
+const clsList = document.getElementById("clsList");
+
+// ---------- Sizing ----------
+function fitCanvas(cv) {
+  const rect = cv.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = rect.width * dpr;
+  cv.height = rect.height * dpr;
+  cv.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function resizeAll() {
+  fitCanvas(radarCanvas);
+  fitCanvas(specCanvas);
+}
+window.addEventListener("resize", resizeAll);
+
+// ---------- Build classification list ----------
+let clsEls = {};      // label → DOM 元素（避免按索引取，元素会被移到第一位）
+let clsTopLabel = null; // 当前置顶的命中类别
+function buildClsList() {
+  clsList.innerHTML = "";
+  clsEls = {};
+  CATEGORIES.forEach((c, i) => {
+    const div = document.createElement("div");
+    div.className = "cls-item";
+    div.dataset.idx = i;
+    div.innerHTML = `
+      <div class="icon">${c.icon}</div>
+      <div class="meta">
+        <div class="name">${c.zh} <span style="color:var(--text-dim);font-size:11px">${c.en}</span></div>
+      </div>
+      <div class="pct">0%</div>`;
+    if (c.label === "quiet") div.classList.add("active");   // 初始无数据时默认显示“安静”
+    clsEls[c.label] = div;
+    clsList.appendChild(div);
+  });
+}
+buildClsList();
+
+// ---------- 类别库展开/收起 ----------
+document.getElementById("clsLibBtn").addEventListener("click", () => {
+  const collapsed = clsList.classList.toggle("collapsed");
+  document.getElementById("clsLibBtn").textContent = collapsed ? "📚 类别库" : "收起";
+});
+
+// ---------- Voiceprint buttons ----------
+// 双击 html 文件（file://）打开时也能连本机接收服务；http 访问时仍用相对路径
+const API = location.protocol === 'file:' ? 'http://127.0.0.1:8768' : '';
+document.getElementById("vpEnroll").addEventListener("click", async () => {
+  const name = prompt("请输入新声纹用户名（随后请对着 8 麦阵列清晰说话约 16 秒，分 3 段）：");
+  if (!name) return;
+
+  flash("录音中：请对着麦克风阵列连续说话（3 段 × 4 秒）…");
+  try {
+    const r = await (await fetch(API + "/api/vp/enroll", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name })
+    })).json();
+    flash(r.ok ? "已录入声纹：" + name : "录入失败：" + (r.error || "未知错误"));
+  } catch (e) { flash("录入失败：接收服务未连接"); }
+});
+document.getElementById("vpClear").addEventListener("click", () => {
+  document.getElementById("vpName").textContent = "未识别";
+  document.getElementById("vpId").textContent = "ID: --";
+  document.getElementById("vpConf").textContent = "0.0";
+  document.getElementById("vpAvatar").textContent = "👤";
+  document.getElementById("vpList").innerHTML = "";
+});
+
+// ---------- Flash message ----------
+function flash(msg) {
+  const d = document.createElement("div");
+  d.textContent = msg;
+  d.style.cssText = "position:fixed;top:70px;left:50%;transform:translateX(-50%);background:rgba(0,229,255,.15);border:1px solid var(--accent);color:var(--accent);padding:8px 18px;border-radius:6px;z-index:99;animation:fadeout 2s forwards;";
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), 2000);
+}
+const style = document.createElement("style");
+style.textContent = "@keyframes fadeout{0%{opacity:0;transform:translate(-50%,-8px)}15%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}";
+document.head.appendChild(style);
+
+// ============================================================
+//  RADAR
+// ============================================================
+const sources = []; // 保留给公开 API
+
+// 单一来源角度跟踪器（AngleTracker）
+// ① 走向抑制：加权圆均值（离群样本按 exp(-d²/2σ²) 降权，而非硬丢弃 → 不会“冻住再跳”）
+// ② 角速度：700ms 窗口最小二乘拟合斜率（±720°/s 钳制）；断流时按该速度阻尼外推 → 消除“停-跳-停-跳”
+// ③ 平滑：残差大（换方位/新事件）τ=15ms 立即跟上；稳态 τ=35ms 抑制噪声抖动
+class AngleTracker {
+  constructor() {
+    this.disp = 0; this.lastA = 0; this.lastT = 0; this.speed = 0;
+    this.samples = []; this.visible = false;
+    this.hideAfter = 1500; this.sampleAgeMs = 1200; this.maxSamples = 48;   // 1200ms 窗：至少容纳两个突发（间隔~750ms），角速度拟合更稳
+  }
+  _sd(d) { return ((d % 360) + 540) % 360 - 180; }   // 最短路径差，跨 359→0 不缠绕
+  push(angleDeg, t) {
+    const a = ((angleDeg % 360) + 360) % 360;
+    if (!this.visible) {   // 首帧就位，零延迟，不从旧位置扫过去
+      this.visible = true; this.disp = a; this.lastA = a;
+      this.lastT = t; this.speed = 0; this.samples = [{ t, a }]; return;
+    }
+    const dtSec = Math.max(0, (t - this.lastT) / 1000);
+    const expected = this.lastA + this.speed * dtSec;
+    const cont = expected + this._sd(a - expected);   // 以预测点为参考展开，长时间连续运动也不缠绕
+    this.samples.push({ t, a: cont });
+    const cutoff = t - this.sampleAgeMs;
+    while (this.samples.length > 2 &&
+           (this.samples[0].t < cutoff || this.samples.length > this.maxSamples)) this.samples.shift();
+    this.lastA = cont; this.lastT = t; this.speed = this._fitSpeed();
+  }
+  _fitSpeed() {   // 最小二乘斜率 → 度/秒，钳制 ±720
+    const n = this.samples.length; if (n < 2) return 0;
+    let st = 0, sa = 0, stt = 0, sta = 0;
+    for (let i = 0; i < n; i++) { const p = this.samples[i]; st += p.t; sa += p.a; stt += p.t * p.t; sta += p.t * p.a; }
+    const denom = n * stt - st * st; if (Math.abs(denom) < 1e-6) return 0;
+    let v = ((n * sta - st * sa) / denom) * 1000;
+    if (v > 720) v = 720; if (v < -720) v = -720; return v;
+  }
+  update(now, dt) {
+    if (!this.visible) return;
+    const elapsed = (now - this.lastT) / 1000;
+    if (elapsed * 1000 > this.hideAfter) { this.visible = false; return; }
+    let target;
+    if (elapsed < 0.06) target = this.lastA;   // 60ms 内不起振，避免把单包噪声放大成假位移
+    else {
+      // 外推阻尼：断流越久越不可信；持续发声期间（板端 750ms 空档）放缓阻尼，
+      // 让指针按拟合角速度平滑扫过空档，消除环绕时的走走停停
+      const ongoing = typeof ptr !== "undefined" && (now - ptr.soundHint < 600);
+      const damp = Math.exp(-(elapsed - 0.06) / (ongoing ? 1.2 : 0.35));
+      target = this.lastA + this.speed * elapsed * damp;
+    }
+    const err = Math.abs(target - this.disp);
+    const tau = err > 20 ? 0.015 : 0.055;   // 自适应平滑：大跳变立即跟上，稳态放缓抑制残余抖动
+    const k = 1 - Math.exp(-Math.min(dt, 0.1) / tau);
+    this.disp += (target - this.disp) * k;
+  }
+}
+const tracker = new AngleTracker();
+
+// ptr 只保留页面侧状态（tracker 负责角度推算），soundHint 由分类流驱动“此刻是否仍有声音”
+const ptr = { on: false, disp: 0, target: 0, buf: [], burst: [], t0: 0, lastActive: 0, lastPush: 0, dasActive: false, dasT: 0, soundHint: 0 };
+// 瞬态突发（拍手等）掐头去尾：只取突发第 25~175ms 的中段样本做中位数，头尾（含混响尾）一律不进统计
+const BURST_GAP = 250, HEAD_MS = 25, TRANSIENT_MS = 250, MID_LEN = 150, TAIL_MS = 15, ROLL_MS = 400;
+
+function addSource(angle, strength) {
+  sources.push({ angle, radius: 0, strength, life: 1, color: strength > 0.7 ? "#ff4466" : strength > 0.4 ? "#ffaa00" : "#00ff88" });
+}
+
+function pushAngle(deg) {
+  const now = performance.now();
+  const soundOn = now - ptr.soundHint < 600;   // 分类流仍报有声 → 视为同一连续事件，不按突发切断
+  // 新突发判定：间隔 >250ms 且声音已停 才视为新的声音事件（拍手之间、换方位）
+  if (now - ptr.lastPush > BURST_GAP && !soundOn) { ptr.burst.length = 0; ptr.t0 = now; }
+  const ref = ptr.burst.length ? ptr.burst[ptr.burst.length - 1].a : deg;
+  const val = ref + ((deg - ref + 540) % 360) - 180;   // 最短路径展开，避免 359→0 缠绕
+  ptr.burst.push({ t: now, a: val });
+  while (ptr.burst.length && now - ptr.burst[0].t > ROLL_MS) ptr.burst.shift();  // 滚动窗上限 400ms
+
+  let mid;
+  if (now - ptr.t0 <= TRANSIENT_MS) {
+    // 瞬态突发：严格锁定中段 [25ms, 175ms]，之后的混响尾样本直接不进统计
+    mid = ptr.burst.filter(p => p.t - ptr.t0 >= HEAD_MS && p.t - ptr.t0 <= HEAD_MS + MID_LEN);
+    if (!mid.length) mid = ptr.burst.filter(p => p.t - ptr.t0 <= HEAD_MS + MID_LEN);
+    if (!mid.length) mid = ptr.burst;
+  } else {
+    // 持续声（说话/音乐）：滚动 400ms 窗 + 丢弃最新 15ms，保持跟手
+    mid = ptr.burst.filter(p => now - p.t >= TAIL_MS);
+    if (!mid.length) mid = ptr.burst;
+  }
+  const sorted = mid.map(p => p.a).sort((a, b) => a - b);
+  let m = ((sorted[Math.floor(sorted.length / 2)] % 360) + 360) % 360;
+
+  // 累计死区：相对锚点累计偏转 ≥2.5° 才更新（板端原始角度中位抖动 1°、均值 2.1°，直接透传会看到指针微颤）；
+  // 缓慢环绕时偏差会持续累计，仍能跟手
+  if (pushAngle._acc === undefined) pushAngle._acc = m;
+  if (Math.abs(tracker._sd(m - pushAngle._acc)) >= 2.5) pushAngle._acc = m;
+  else m = pushAngle._acc;
+
+  // 断流 >250ms 且方位突变 >30° → 重置跟踪器；但持续发声期间（环绕移动）不重置，靠速度外推平滑过渡
+  if (tracker.visible && now - ptr.lastPush > 250 && !soundOn && Math.abs(tracker._sd(m - tracker.disp)) > 30) {
+    tracker.visible = false; tracker.samples.length = 0; tracker.speed = 0;
+  }
+  tracker.push(m, now);   // 每包只更新目标角，绘制交给 rAF
+
+  ptr.target = m;
+  ptr.on = tracker.visible;
+  ptr.disp = ((tracker.disp % 360) + 360) % 360;
+  ptr.lastPush = now; ptr.lastActive = now;
+}
+
+function clearAngle() {
+  ptr.on = false; ptr.buf.length = 0; ptr.burst.length = 0; ptr.lastPush = 0;
+  tracker.visible = false; tracker.samples.length = 0; tracker.speed = 0;
+}
+
+// 静态底图（外环/刻度/麦克风）离屏缓存：尺寸变化时才重画一次
+const radarBG = document.createElement("canvas");
+const bgctx = radarBG.getContext("2d");
+let radarBGSig = "";
+
+function radarGeom() {
+  const W = radarCanvas.clientWidth, H = radarCanvas.clientHeight;
+  return { W, H, cx: W / 2, cy: H / 2, R: Math.max(10, Math.min(W, H) / 2 - 24) };
+}
+
+function buildRadarBG(g) {
+  const { W, H, cx, cy, R } = g;
+  const dpr = window.devicePixelRatio || 1;
+  radarBG.width = Math.round(W * dpr);
+  radarBG.height = Math.round(H * dpr);
+  const rctx = bgctx;                 // 本函数内所有静态笔迹画到离屏画布
+  rctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  rctx.clearRect(0, 0, W, H);
+
+  // outer glow
+  const grd = rctx.createRadialGradient(cx, cy, R * 0.2, cx, cy, R);
+  grd.addColorStop(0, "rgba(0,229,255,0.08)");
+  grd.addColorStop(1, "rgba(0,229,255,0)");
+  rctx.fillStyle = grd;
+  rctx.fillRect(0, 0, W, H);
+
+  // concentric circles
+  rctx.strokeStyle = "rgba(0,229,255,0.25)";
+  rctx.lineWidth = 1;
+  for (let i = 1; i <= 5; i++) {
+    rctx.beginPath();
+    rctx.arc(cx, cy, (R * i) / 5, 0, Math.PI * 2);
+    rctx.stroke();
+  }
+
+  // cross lines + diagonals
+  rctx.strokeStyle = "rgba(0,229,255,0.18)";
+  rctx.beginPath();
+  rctx.moveTo(cx - R, cy); rctx.lineTo(cx + R, cy);
+  rctx.moveTo(cx, cy - R); rctx.lineTo(cx, cy + R);
+  rctx.moveTo(cx - R * 0.707, cy - R * 0.707); rctx.lineTo(cx + R * 0.707, cy + R * 0.707);
+  rctx.moveTo(cx + R * 0.707, cy - R * 0.707); rctx.lineTo(cx - R * 0.707, cy + R * 0.707);
+  rctx.stroke();
+
+  // angle labels (360°) — 约定: 正右方(东)=0°, 逆时针递增 (上=90°, 左=180°, 下=270°)
+  // 屏幕 y 轴向下, 逆时针角度 θ → 位置 (cx + d·cosθ, cy - d·sinθ)
+  rctx.fillStyle = "rgba(0,229,255,0.7)";
+  rctx.font = "11px monospace";
+  rctx.textAlign = "center";
+  rctx.textBaseline = "middle";
+  for (let deg = 0; deg < 360; deg += 30) {
+    const rad = deg * Math.PI / 180;
+    const lx = cx + Math.cos(rad) * (R + 10);
+    const ly = cy - Math.sin(rad) * (R + 10);
+    rctx.fillText(deg + "°", lx, ly);
+  }
+
+  // 8-microphone circular array (360° UCA)
+  const micR = R * 0.94;                    // 阵列半径（贴近外圈）
+  const micNode = Math.max(10, R * 0.038);  // 麦克风节点半径
+
+  // 阵列外环（连接所有麦克风的粗环 + 发光）
+  rctx.strokeStyle = "rgba(0,229,255,0.6)";
+  rctx.lineWidth = 2.5;
+  rctx.shadowColor = "rgba(0,229,255,0.7)";
+  rctx.shadowBlur = 12;
+  rctx.beginPath();
+  rctx.arc(cx, cy, micR, 0, Math.PI * 2);
+  rctx.stroke();
+  rctx.shadowBlur = 0;
+
+  // 阵列内环（细线，增强层次感）
+  rctx.strokeStyle = "rgba(0,229,255,0.22)";
+  rctx.lineWidth = 1;
+  rctx.beginPath();
+  rctx.arc(cx, cy, micR - micNode * 0.7, 0, Math.PI * 2);
+  rctx.stroke();
+
+  // 从中心到每个麦克风的辐条 (Mi 位于角度 (i-1)*45°, 0°=正右, 逆时针)
+  rctx.strokeStyle = "rgba(0,229,255,0.16)";
+  rctx.lineWidth = 1;
+  for (let i = 0; i < 8; i++) {
+    const a = -i * 45 * Math.PI / 180;
+    rctx.beginPath();
+    rctx.moveTo(cx, cy);
+    rctx.lineTo(cx + Math.cos(a) * micR, cy + Math.sin(a) * micR);
+    rctx.stroke();
+  }
+
+  // 麦克风节点 + 内侧标签 M1~M8
+  for (let i = 0; i < 8; i++) {
+    const a = -i * 45 * Math.PI / 180;
+    const mx = cx + Math.cos(a) * micR;
+    const my = cy + Math.sin(a) * micR;
+    // 外光晕
+    rctx.fillStyle = "rgba(0,229,255,0.28)";
+    rctx.beginPath(); rctx.arc(mx, my, micNode, 0, Math.PI * 2); rctx.fill();
+    // 主体
+    rctx.fillStyle = "#00e5ff";
+    rctx.shadowColor = "#00e5ff";
+    rctx.shadowBlur = 14;
+    rctx.beginPath(); rctx.arc(mx, my, micNode * 0.55, 0, Math.PI * 2); rctx.fill();
+    rctx.shadowBlur = 0;
+    // 中心点
+    rctx.fillStyle = "#ffffff";
+    rctx.beginPath(); rctx.arc(mx, my, micNode * 0.22, 0, Math.PI * 2); rctx.fill();
+    // 标签 M1~M8（放在节点内侧，避免与外圈角度刻度重叠）
+    rctx.fillStyle = "rgba(0,229,255,0.95)";
+    rctx.font = "bold 13px monospace";
+    rctx.textAlign = "center";
+    rctx.textBaseline = "middle";
+    const lx = mx - Math.cos(a) * (micNode + 5);
+    const ly = my - Math.sin(a) * (micNode + 5);
+    rctx.fillText("M" + (i + 1), lx, ly);
+  }
+
+  // 阵列标识（底部内侧）
+  rctx.fillStyle = "rgba(0,229,255,0.7)";
+  rctx.font = "10px monospace";
+  rctx.textAlign = "center";
+  rctx.fillText("8-MIC UCA · 360°", cx, cy + micR - micNode - 6);
+}
+
+// 指针辉光贴图（预渲染一次）：shadowBlur 是 Canvas 最大性能杀手，每帧用会掉帧
+const GLOW_R = 26;
+const glowSprite = (() => {
+  const c = document.createElement("canvas");
+  c.width = c.height = GLOW_R * 2;
+  const g = c.getContext("2d");
+  const gd = g.createRadialGradient(GLOW_R, GLOW_R, 0, GLOW_R, GLOW_R, GLOW_R);
+  gd.addColorStop(0, "rgba(255,68,102,0.9)");
+  gd.addColorStop(0.45, "rgba(255,68,102,0.35)");
+  gd.addColorStop(1, "rgba(255,68,102,0)");
+  g.fillStyle = gd;
+  g.fillRect(0, 0, GLOW_R * 2, GLOW_R * 2);
+  return c;
+})();
+
+let lastPaintMs = 0;
+
+// 动态层：底图 + 单一方位指针（去掉旋转扫描线，杜绝“第二个声源”的错觉）
+function paintRadarFrame(g) {
+  const { W, H, cx, cy, R } = g;
+  const now = performance.now();
+  const dt = lastPaintMs ? Math.min(now - lastPaintMs, 100) : 16.7;
+  rctx.clearRect(0, 0, W, H);
+  rctx.drawImage(radarBG, 0, 0, W, H);
+
+  // 指针推进：有新数据 → 自适应平滑收敛；数据断流 → 按最小二乘拟合角速度阻尼外推（消除“停-跳-停-跳”）。
+  // 板端 v3 实测：有效角度占空比仅 15.9%，以突发形式到达（突发中位 87ms、空档中位 753ms），且 v3 不再发 DAS 包，
+  // 无法用 DAS 判断“此刻是否还有声音”。改用分类流作为“声音仍在”的指示（分类包间隔中位 24~100ms，且 event 包距最近
+  // 有效角度中位仅 2ms），避免发声过程中指针反复消失（这正是主观“延时 0.4 秒”的成因）。
+  if (tracker.visible) {
+    const sounding = now - ptr.soundHint < 400;          // 400ms 内分类仍报 event/uncertain
+    tracker.hideAfter = sounding ? 900 : 250;            // 有声：覆盖 753ms 空档；真静音：250ms 内清除不留拖尾
+    if (now - tracker.lastT > tracker.hideAfter) clearAngle();
+  }
+  tracker.update(now, dt);
+  ptr.on = tracker.visible;
+  ptr.disp = ((tracker.disp % 360) + 360) % 360;
+  if (ptr.on) {
+    const a = -ptr.disp * Math.PI / 180;   // 0°=正右，逆时针递增 → 屏幕弧度
+    const bx = cx + Math.cos(a) * R * 0.95;
+    const by = cy + Math.sin(a) * R * 0.95;
+    rctx.strokeStyle = "rgba(255,68,102,0.6)";
+    rctx.lineWidth = 2;
+    rctx.beginPath();
+    rctx.moveTo(cx, cy);
+    rctx.lineTo(bx, by);
+    rctx.stroke();
+    rctx.drawImage(glowSprite, bx - GLOW_R, by - GLOW_R, GLOW_R * 2, GLOW_R * 2);
+    rctx.fillStyle = "#ff4466";
+    rctx.beginPath(); rctx.arc(bx, by, 7, 0, Math.PI * 2); rctx.fill();
+    rctx.fillStyle = "#ffffff";
+    rctx.beginPath(); rctx.arc(bx, by, 3, 0, Math.PI * 2); rctx.fill();
+    rctx.fillStyle = "#ff8899";
+    rctx.font = "bold 13px monospace";
+    rctx.textAlign = "left";
+    rctx.textBaseline = "middle";
+    rctx.fillText(ptr.disp.toFixed(1) + "°", bx + 12, by - 10);
+  }
+
+  // center
+  rctx.fillStyle = "#00e5ff";
+  rctx.beginPath();
+  rctx.arc(cx, cy, 3, 0, Math.PI * 2);
+  rctx.fill();
+  lastPaintMs = now;
+}
+
+function drawRadar() {
+  const g = radarGeom();
+  const sig = g.W + "x" + g.H + "@" + (window.devicePixelRatio || 1);
+  if (sig !== radarBGSig) { buildRadarBG(g); radarBGSig = sig; }   // 底图仅尺寸变化时重建
+  paintRadarFrame(g);
+  requestAnimationFrame(drawRadar);
+}
+
+
+
+// ============================================================
+//  SPECTRUM
+// ============================================================
+// PL004 实时频谱：波束合成单声道 256 点 FFT → 129 频点（0..8kHz，62.5Hz/格），值 dBFS [-120,0]
+const SPEC_BINS = 129, SPEC_DB_MIN = -120;
+// 显示窗收窄到 [-80,-25]dB：安静地板（≈-98~-83dB）整体在窗下→无柱；真实声音（-40~-20dB）接近满格，变化更醒目
+const SPEC_FLOOR_DB = -80, SPEC_RANGE_DB = 55;
+let specBuf = new Float32Array(SPEC_BINS);    // 显示值（逐帧平滑）
+let specTarget = new Float32Array(SPEC_BINS); // 板端最新目标值（10Hz 更新）
+let specPeak = new Float32Array(SPEC_BINS);   // 峰值保持线（缓慢下落）
+let specHold = new Float32Array(SPEC_BINS);   // 瞬态保持：冲高后冻结衰减的截止时刻(ms)
+let specGain = 1, specMaxHold = 0;            // 自动增益：把近期峰值拉到 ~85% 高度（快降慢升防抽动）
+let specHasData = false; // 收到板端 spectrum 包才置真；过期 2s 回落占位
+let specGrad = null, specGradH = 0; // 预生成的柱状渐变（按高度缓存，避免每帧每柱 createLinearGradient）
+let specPlaceholderSig = ""; // 占位提示已绘制的尺寸（尺寸变化才重绘）
+let lastRxMs = 0; // 最近一次收到 PS 数据的时刻（performance.now()）
+function drawSpectrum() {
+  requestAnimationFrame(drawSpectrum); // 始终保持在 rAF 循环里（占位态也要能随时被真实数据接替）
+  const W = specCanvas.clientWidth, H = specCanvas.clientHeight;
+  sctx.clearRect(0, 0, W, H);
+
+  if (!specHasData) {
+    // 占位提示只画一次，不再每帧重绘（省下 60fps 的文字渲染开销）
+    const sig = W + "x" + H;
+    if (specPlaceholderSig !== sig) {
+      sctx.fillStyle = "rgba(0,229,255,0.45)";
+      sctx.font = "13px sans-serif";
+      sctx.textAlign = "center";
+      sctx.textBaseline = "middle";
+      sctx.fillText("等待板端频谱数据…", W / 2, H / 2);
+      specPlaceholderSig = sig;
+    }
+    return;
+  }
+
+  if (specGradH !== H) {  // 高度变化才重建渐变
+    specGradH = H;
+    specGrad = sctx.createLinearGradient(0, 0, 0, H);
+    specGrad.addColorStop(0, "#a8ffc8");   // 柱顶亮青绿
+    specGrad.addColorStop(0.35, "#00ff88");
+    specGrad.addColorStop(0.7, "#00e5ff");
+    specGrad.addColorStop(1, "rgba(0,229,255,0.15)");
+  }
+  // 刻度网格（相对刻度：自动增益下 dB 绝对值不再对应，保留参考线）
+  sctx.strokeStyle = "rgba(0,229,255,0.10)"; sctx.lineWidth = 1;
+  sctx.beginPath();
+  for (const frac of [0.3, 0.55, 0.8]) {
+    const gy = H - frac * H * 0.9;
+    sctx.moveTo(0, gy); sctx.lineTo(W, gy);
+  }
+  sctx.stroke();
+
+  // 逐帧平滑（rAF 60fps 插值 10Hz 数据：上升快、下落柔）+ 峰值保持 + 自动增益
+  const bw = W / SPEC_BINS, headroom = H * 0.9;
+  let maxT = 0;
+  const nowMs = performance.now();
+  for (let i = 0; i < SPEC_BINS; i++) {
+    const t = specTarget[i], cur = specBuf[i];
+    if (t > cur + 0.12) specHold[i] = nowMs + 220;   // 瞬态冲高（如拍手）：保持 220ms 再衰减，跳动看得清
+    specBuf[i] = t > cur ? cur + (t - cur) * 0.5
+                         : (nowMs < specHold[i] ? cur : cur + (t - cur) * 0.08);
+    if (specBuf[i] > specPeak[i]) specPeak[i] = specBuf[i];
+    else specPeak[i] = Math.max(specPeak[i] - 0.007, specBuf[i]);
+    if (t > maxT) maxT = t;
+  }
+  specMaxHold = Math.max(specMaxHold * 0.99, maxT);           // 峰值包络遗忘加快（~0.3s），瞬态后增益快速恢复
+  const want = specMaxHold > 0.04 ? 0.95 / specMaxHold : 6;   // 近期峰值拉到 95%
+  const tgt = want < 1 ? 1 : (want > 6 ? 6 : want);
+  specGain += (tgt - specGain) * (tgt < specGain ? 0.25 : 0.08);  // 快降慢升（升速加快，拍手不再被压）
+
+  // 柱状频谱线（细窄柱，单路径填充）+ 峰值保持帽线；gamma 1.25 适度拉大动态，瞬态不被压没
+  const dyn = v => { const x = Math.min(v * specGain, 1); return Math.pow(x, 1.25); };
+  const barW = Math.max(bw * 0.35, 0.5);
+  const barOff = (bw - barW) / 2;
+  sctx.fillStyle = specGrad;
+  sctx.beginPath();
+  for (let i = 0; i < SPEC_BINS; i++) {
+    const bh = dyn(specBuf[i]) * headroom;
+    if (bh > 0.5) sctx.rect(i * bw + barOff, H - bh, barW, bh);
+  }
+  sctx.fill();
+  sctx.fillStyle = "rgba(168,255,200,0.95)";
+  sctx.beginPath();
+  for (let i = 0; i < SPEC_BINS; i++) {
+    const ph = dyn(specPeak[i]) * headroom;
+    if (ph > 2) sctx.rect(i * bw + barOff, H - ph - 2, barW, 2);
+  }
+  sctx.fill();
+  // freq labels（0..8kHz，62.5Hz/格）
+  sctx.fillStyle = "rgba(0,229,255,0.6)";
+  sctx.font = "10px monospace";
+  sctx.textAlign = "center";
+  for (let f = 0; f <= 8; f += 2) {
+    sctx.fillText(f + "k", (f / 8) * W, H - 3);
+  }
+}
+
+// ============================================================
+//  CLASSIFICATION update
+// ============================================================
+function updateClassification(scores, highlightLabel, hideBars) {
+  // scores: 原始 scores_ppm（9 项）；highlightLabel 可传 'quiet'/'uncertain'
+  // hideBars=true 时隐藏得分条（PS 约定：安静时原始分数仅供诊断）
+  const hlIdx = highlightLabel != null ? CLS_LABEL2IDX[highlightLabel] : -1;
+  const quietNow = !!hideBars;
+  CATEGORIES.forEach((c, i) => {
+    const it = clsEls[c.label];
+    if (!it) return;
+    const v = scoreOf(scores, c);
+    const on = i === hlIdx;
+    const bar = it.querySelector(".bar > i"), pctEl = it.querySelector(".pct");
+    let txt, w;
+    if (v == null) {
+      // 安静 / 不确定：无分数槽，只显示状态
+      w = "0%"; txt = on ? "●" : "—";
+    } else {
+      const pct = Math.round(v * 1000) / 10;
+      w = (quietNow ? 0 : Math.min(100, pct)) + "%";
+      txt = quietNow ? "—" : pct.toFixed(1) + "%";
+    }
+    // 只在值变化时写 DOM：每秒几十次无变化的重绘会拖慢样式计算
+    if (pctEl.textContent !== txt) pctEl.textContent = txt;
+    if (bar) { if (bar.style.width !== w) bar.style.width = w; }
+    if (it.style.order !== (on ? "-1" : "0")) it.style.order = on ? "-1" : "0";  // 命中类别立即跳到第一位
+    if (it.classList.contains("active") !== on) it.classList.toggle("active", on);
+    const hit = on && c.label !== "quiet";   // 命中七类之一 → 绿色脉冲强调；安静不高亮
+    if (it.classList.contains("hit") !== hit) it.classList.toggle("hit", hit);
+  });
+
+  // 新类别命中时播放一次弹出动画（用 Web Animations，避免 offsetWidth 强制回流）
+  if (hlIdx >= 0) {
+    const label = CATEGORIES[hlIdx].label;
+    if (label !== clsTopLabel) {
+      clsTopLabel = label;
+      const el = clsEls[label];
+      if (el && el.animate) {
+        el.animate(
+          [{ transform: "scale(1)" }, { transform: "scale(1.045)" }, { transform: "scale(1)" }],
+          { duration: 260, easing: "ease-out" }
+        );
+      }
+    }
+  } else {
+    clsTopLabel = null;
+  }
+}
+
+function setClsState(state, origin, modelSeq) {
+  const el = document.getElementById("clsStateText");
+  const meta = document.getElementById("clsStateMeta");
+  if (!el) return;
+  const prefix = origin === "replay" ? "[回放] " : "";
+  el.textContent = prefix + (CLS_STATE_TEXT[state] || "等待数据…");
+  el.style.color = state === "event" ? "var(--accent)" :
+                   state === "error" ? "#ff4466" : "var(--text-dim)";
+  if (meta) meta.textContent = modelSeq != null ? ("#" + modelSeq) : "";
+}
+
+// 分类结果 2 秒未刷新则标记过期（协议：不拿旧类别冒充当前结果）
+let clsStaleTimer = null;
+function armClsStaleTimer() {
+  clearTimeout(clsStaleTimer);
+  clsStaleTimer = setTimeout(() => {
+    setClsState("pending", null, null);
+    document.getElementById("clsStateText").textContent = "数据已过期 · 等待数据…";
+    clsTopLabel = null;
+    CATEGORIES.forEach((c) => {
+      const it = clsEls[c.label];
+      if (!it) return;
+      it.classList.remove("active");
+      it.style.order = "0";   // 过期后不再置顶，恢复正常顺序
+    });
+  }, 2000);
+}
+
+// ============================================================
+//  VOICEPRINT update
+// ============================================================
+function updateVoiceprint(sp) {
+  if (!sp) return;
+  document.getElementById("vpName").textContent = sp.name || "未识别";
+  document.getElementById("vpId").textContent = "ID: " + (sp.id || "--");
+  document.getElementById("vpConf").textContent = (sp.conf || 0).toFixed(1);
+  document.getElementById("vpAvatar").textContent = sp.avatar || "👤";
+  const list = document.getElementById("vpList");
+  list.innerHTML = "";
+  (sp.candidates || []).slice(0, 3).forEach((c, i) => {
+    const div = document.createElement("div");
+    div.className = "vp-cand" + (i === 0 ? " top" : "");
+    div.innerHTML = `<span class="name">${i === 0 ? "★ " : ""}${c.name}</span>`;
+    list.appendChild(div);
+  });
+}
+
+// ============================================================
+//  CLOCK + latency
+// ============================================================
+setInterval(() => {
+  const d = new Date();
+  document.getElementById("clock").textContent =
+    String(d.getHours()).padStart(2, "0") + ":" +
+    String(d.getMinutes()).padStart(2, "0") + ":" +
+    String(d.getSeconds()).padStart(2, "0");
+  // 延时 = 距上次板端出新角度的间隔（颜色即证据：<60ms 绿 / <300ms 蓝 / 更久橙色）
+  const el = document.querySelector("#latency span");
+  const age = lastRxMs ? performance.now() - lastRxMs : Infinity;
+  if (age <= 2000) {
+    el.textContent = age.toFixed(0);
+    el.style.color = age < 60 ? "var(--green)" : age < 300 ? "var(--accent)" : "var(--warn)";
+  } else {
+    el.textContent = "--";
+    el.style.color = "var(--accent)";
+  }
+}, 500);
+
+// ============================================================
+//  PS (ZYNQ) 数据格式解析
+//  主协议 RADAR UDP JSON v2（桥接器透传）：
+//    kind=doa:           {v:2, kind:"doa", valid, azimuth_mdeg, signal, method, ...}
+//    kind=classification:{v:2, kind:"classification", state, label, scores_ppm[8], ...}
+//  兼容旧 v1 演示格式: "SEQ=1,ANGLE=30,TYPE=CLAP,CONF=92" 或 {angle_deg, sound_type, confidence_pct}
+//  角度约定: 正右方(东)=0°, 逆时针递增 (上=90°, 左=180°, 下=270°); v2 azimuth_mdeg 单位 0.001°
+//  屏幕 y 轴向下, PS 角度 deg → 屏幕弧度 = -deg·π/180
+// ============================================================
+function parsePSFrame(raw) {
+  if (raw == null) return null;
+  let obj = null;
+
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (s.startsWith("{") || s.startsWith("[")) {
+      try { obj = JSON.parse(s); } catch (e) { obj = null; }
+    }
+    if (!obj) { // 纯文本 KEY=VAL,KEY=VAL
+      obj = {};
+      s.split(/[,;\s]+/).forEach(kv => {
+        const idx = kv.indexOf("=");
+        if (idx > 0) obj[kv.slice(0, idx).trim().toUpperCase()] = kv.slice(idx + 1).trim();
+      });
+    }
+  } else if (typeof raw === "object") {
+    obj = raw;
+  }
+  if (!obj) return null;
+
+  // ---------- v3 / v2 协议 ----------
+  if ((obj.v === 3 || obj.v === 2) && (obj.kind === "doa" || obj.kind === "classification")) {
+    return { v2: true, ...obj };
+  }
+
+  // ---------- v1 兼容 ----------
+  const get = (...keys) => {
+    for (const k of keys) {
+      if (obj[k] !== undefined && obj[k] !== null && obj[k] !== "") return obj[k];
+      const up = k.toUpperCase();
+      if (obj[up] !== undefined && obj[up] !== null && obj[up] !== "") return obj[up];
+    }
+    return undefined;
+  };
+  const angleDeg = parseFloat(get("angle_deg", "ANGLE", "angle"));
+  const soundType = String(get("sound_type", "TYPE", "type") || "").toUpperCase();
+  const conf = parseFloat(get("confidence_pct", "CONF", "confidence", "conf"));
+  const seq = get("seq", "SEQ");
+  return {
+    v2: false,
+    seq: seq === undefined ? null : (isNaN(+seq) ? seq : +seq),
+    angleDeg: isNaN(angleDeg) ? null : angleDeg,
+    soundType: soundType || null,
+    confidence: isNaN(conf) ? null : conf,
+  };
+}
+
+// 把 PS 帧转成内部显示数据
+function applyPSFrame(p) {
+  if (!p) return;
+  lastRxMs = performance.now(); // 记录最近一次收到 PS 数据的时刻
+
+  // ================= v2 协议 =================
+  if (p.v2) {
+    if (p.kind === "doa") {
+      // valid=true 且有角度才加方位点；quiet/invalid 不加
+      if (p.valid && p.azimuth_mdeg != null) {
+        const deg = p.azimuth_mdeg / 1000;
+        const rad = -deg * Math.PI / 180; // 0°=正右, 逆时针 → 屏幕弧度(y向下)
+        addSource(rad, p.signal === "active" ? 0.85 : 0.6);
+      }
+    } else if (p.kind === "classification") {
+      // scores_ppm（11 槽新协议 / 8 槽旧协议）直接交给 scoreOf 映射
+      // event → 高亮识别类别；background/uncertain → 高亮“安静”（“不确定”项已移除）
+      const hl = p.state === "event" ? p.label
+               : (p.state === "background" || p.state === "uncertain") ? "quiet" : null;
+      updateClassification(p.scores_ppm, hl, p.state === "background" || p.state === "uncertain");
+      setClsState(p.state, p.origin, p.model_seq);
+      armClsStaleTimer();
+    }
+    return;
+  }
+
+  // ================= v1 兼容 =================
+  if (p.angleDeg !== null) {
+    const rad = -p.angleDeg * Math.PI / 180; // 0°=正右, 逆时针 → 屏幕弧度
+    addSource(rad, p.confidence !== null ? Math.max(0.2, p.confidence / 100) : 0.5);
+  }
+  if (p.soundType) {
+    const label = SOUND_TYPE_MAP[p.soundType];
+    const scores = CATEGORIES.filter(c => c.psIdx >= 0).map(() => Math.round((0.03 + Math.random() * 0.05) * 1e6));
+    if (label !== undefined && CLS_LABEL2IDX[label] !== undefined && CATEGORIES[CLS_LABEL2IDX[label]].psIdx >= 0) {
+      scores[CATEGORIES[CLS_LABEL2IDX[label]].psIdx] = Math.round((p.confidence !== null ? p.confidence / 100 : 0.8) * 1e6);
+    }
+    updateClassification(scores, label, false);
+    setClsState("event", null, p.seq);
+    armClsStaleTimer();
+  }
+}
+
+let lastSeq = null;
+let lastPlSeq = null;
+
+// ---------- 数据获取：轮询本机 web_receiver.py 的 /api/state ----------
+// /api/state 返回: {connected, peer, doa:{valid,azimuth_mdeg,signal,method,pl_seq,...},
+//   classification:{state,label,scores_ppm[8],model_seq,...}, doa_stale, class_stale}
+async function pollState() {
+  try {
+    applyState(await (await fetch(API + "/api/state", { cache: "no-store" })).json());
+  } catch (e) {
+    setConnStatus(false, "接收服务未连接");
+  }
+}
+
+// 推送式连接（板卡数据一到立即下发，无轮询等待）；不支持 SSE 时退回轮询
+function startStream() {
+  if (!window.EventSource) { setInterval(pollState, 30); return; }
+  const es = new EventSource(API + "/api/stream");
+  es.onopen = () => setConnStatus(true, "推送已连接");
+  es.onmessage = (ev) => {
+    try { applyState(JSON.parse(ev.data)); } catch (e) {}
+  };
+  es.onerror = () => {
+    try { es.close(); } catch (e) {}
+    setConnStatus(false, "接收服务未连接");
+    setTimeout(startStream, 1000);   // 1 秒后自动重连
+  };
+}
+
+// 状态应用（推送/轮询共用）
+// 数据每秒 380+ 包，DOM 写入必须限频，否则样式重算会吃掉帧预算导致卡顿
+let lastTagMs = 0, lastClsMs = 0, lastConnMs = 0, lastClsKey = "", clsRecent = { label: null, t: 0 };
+let specActiveSince = 0; // 频谱连续有声的起始时刻（0=当前无声）：>800ms 无分类事件则升级"类别不确定"
+function applyState(s) {
+  const now = performance.now();
+  if (now - lastConnMs > 200) { lastConnMs = now; setConnStatus(s.connected, s.connected ? "已连接" : "数据超时"); }
+  if (s.das_active) { ptr.dasActive = true; ptr.dasT = now; }   // DAS 只作为“此刻有没有声音”的指示，不参与角度计算
+  else if (now - ptr.dasT > 600) ptr.dasActive = false;
+
+  // ---- 方位（仅 MVDR；DAS 包已在接收端过滤，不参与显示）----
+  const d = s.doa;
+  if (d && d.pl_seq !== lastPlSeq) { // 板端真正出了新角度才算新数据
+    lastPlSeq = d.pl_seq;
+    lastRxMs = now;
+  }
+  const hasSound = d && !s.doa_stale && d.valid && d.azimuth_mdeg != null && d.signal !== "quiet";
+  if (hasSound) {
+    const deg = d.azimuth_mdeg / 1000;
+    pushAngle(deg);   // 每包只更新目标角（含野值抑制），绘制交给 rAF
+    if (now - lastTagMs > 50) {   // 文案 20Hz：读数几乎无滞后（原先 5Hz 最多会晚 200ms）
+      lastTagMs = now;
+      const tag = document.getElementById("radarTag");
+      if (tag) tag.textContent = (d.method || "MVDR").toUpperCase() + " · " + ptr.disp.toFixed(1) + "°";
+    }
+  } else {
+    // 板端 v3 不发 DAS，发声过程中有效角度只有约 16% 占空比（突发 87ms、空档 753ms），
+    // 这里不清空指针，交给渲染层按“分类是否仍报有声”决定滑行上限 → 不会“忽闪”。
+    if (now - lastTagMs > 50) {
+      lastTagMs = now;
+      const tag = document.getElementById("radarTag");
+      if (tag) tag.textContent = s.doa_stale ? "MVDR · 方位超时"
+        : (!ptr.on ? "MVDR · 无有效声源" : (d && d.method ? d.method.toUpperCase() : "MVDR") + " · " + ptr.disp.toFixed(1) + "°（惯性跟踪）");
+    }
+  }
+
+  // ---- 分类（event 高亮识别类别；background → 安静；uncertain → 不确定；过期不拿旧类别冒充）----
+  const c = s.classification;
+  if (c && !s.class_stale) {
+    if (c.state === "event" || c.state === "uncertain") ptr.soundHint = now;  // 供雷达判断“此刻仍有声音”
+    // 状态/类别一变立即刷新（不等 60ms 节流）；板端 event 仅持续约 69ms，节流会把识别结果整段丢掉
+    const key = c.state + "|" + (c.label || "");
+    if (key !== lastClsKey || now - lastClsMs > 60) {
+      lastClsKey = key; lastClsMs = now;
+      if (c.state === "event") clsRecent = { label: c.label, t: now };   // 记住最近一次识别，短暂保留显示
+      const recent = c.state === "background" && clsRecent.label && now - clsRecent.t < 1500;
+      const hl = c.state === "event" ? c.label
+               : c.state === "uncertain" ? "quiet"
+               : recent ? clsRecent.label : "quiet";
+      updateClassification(c.scores_ppm, hl, c.state === "background" || c.state === "uncertain");
+      setClsState(c.state, c.origin, c.model_seq);
+      if (recent) {
+        const el = document.getElementById("clsStateText");
+        const ci = CLS_LABEL2IDX[clsRecent.label];
+        if (el && ci !== undefined) el.textContent = "安静 · 最近：" + CATEGORIES[ci].zh;
+      }
+      armClsStaleTimer();
+    }
+  }
+
+  // ---- 实时频谱（PL004：129 频点 dBFS，一包一条完整曲线，直接替换不累加）----
+  const sp = s.spectrum;
+  if (sp && !s.spectrum_stale && Array.isArray(sp.dbfs) && sp.dbfs.length === SPEC_BINS) {
+    const act = sp.active !== false;          // 板端能量门：安静(active=false)整帧清零，不显示频谱
+    for (let i = 0; i < SPEC_BINS; i++) {
+      let v = act ? (sp.dbfs[i] - SPEC_FLOOR_DB) / SPEC_RANGE_DB : 0;  // -80..-25dB → 0..1
+      specTarget[i] = v < 0 ? 0 : (v > 1 ? 1 : v);   // 只写目标值，平滑交给 rAF 逐帧做
+    }
+    if (!specHasData) { specHasData = true; specPlaceholderSig = ""; }  // 触发一次真实首绘
+    lastRxMs = now;
+  } else if (specHasData && (!sp || s.spectrum_stale)) {
+    specHasData = false; specPlaceholderSig = "";   // 2 秒无频谱包 → 回落占位，不拿旧曲线冒充
+  }
+
+  // ---- 联动：频谱有声 → 雷达滑行指示（未识别出七类时分类面板保持显示“安静”，不再提示“识别中/不确定”）----
+  if (sp && !s.spectrum_stale && sp.active) {
+    ptr.soundHint = now;   // 频谱有声 = 有声音：雷达滑行上限与频谱/分类联动一致
+  }
+
+  // ---- 声纹人物识别（仅“说话”类别时识别；其余类别显示未识别到人声）----
+  const vp = s.voiceprint;
+  if (vp) {
+    if (vp.no_voice) {
+      updateVoiceprint({ name: "未识别到人声", id: "--", conf: 0, avatar: "🔇", candidates: [] });
+    } else {
+      updateVoiceprint({
+        name: vp.ok ? vp.name : "无该人员",
+        id: vp.ok ? vp.id : "--",
+        conf: Math.max(0, Math.min(100, vp.conf !== undefined ? vp.conf : vp.score * 100)),
+        avatar: vp.ok ? "🧑" : "🚫",
+        candidates: vp.ok ? vp.candidates : []
+      });
+    }
+  }
+}
+
+function setConnStatus(online, text) {
+  const el = document.getElementById("connStatus");
+  if (!el) return;
+  el.querySelector(".dot").classList.toggle("loss", !online);
+  el.querySelector(".txt").textContent = "PS " + text;
+}
+
+// ============================================================
+//  PUBLIC API
+// ============================================================
+window.acousticRadar = {
+  // 原始 PS 数据（文本或 JSON），由 UDP→WS 桥转发或直接调用
+  pushPS(raw) {
+    const parsed = parsePSFrame(raw);
+    applyPSFrame(parsed);
+    return parsed;
+  },
+  // 内部格式（向后兼容）
+  push(frame) {
+    if (frame.doa) frame.doa.forEach(s => addSource(s.angle, s.strength || 0.5));
+    if (frame.fft) specBuf = frame.fft;
+    if (frame.cls) updateClassification(frame.cls);
+    if (frame.speaker) updateVoiceprint(frame.speaker);
+    if (frame.latency) document.querySelector("#latency span").textContent = frame.latency.toFixed(0);
+  },
+  addSource,
+  parsePSFrame,
+};
+
+// init
+resizeAll();
+try { drawRadar(); } catch (e) { console.error("drawRadar init", e); }
+try { drawSpectrum(); } catch (e) { console.error("drawSpectrum init", e); }
+// 连接本机接收服务 web_receiver.py：优先 SSE 推送（包到即上屏），页面只显示 PS 真实数据
+startStream();
+</script>
+</body>
+</html>

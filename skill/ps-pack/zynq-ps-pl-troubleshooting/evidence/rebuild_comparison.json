@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "allocated_sections_match_ignoring_build_id": true,
+  "differences": [],
+  "board_accessed": false,
+  "note": "Debug paths and GNU build-id can change with extraction path. No board correctness claim."
+}
